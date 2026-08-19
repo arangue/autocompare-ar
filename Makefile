@@ -4,14 +4,15 @@ export
 .PHONY: help dev db-up db-down api web fmt tidy clean
 
 help:
-	@echo "  make dev     -> run API"
+	@echo "  make dev     -> start Postgres and run the API"
 	@echo "  make db-up   -> start Postgres"
 	@echo "  make db-down -> stop Postgres"
-	@echo "  make api     -> run API"
+	@echo "  make api     -> run API (requires DATABASE_URL)"
 	@echo "  make web     -> run Next.js frontend"
 	@echo "  make clean   -> remove containers and volumes"
 
-dev:
+dev: db-up
+	@sleep 2
 	go run ./cmd/server
 
 db-up:
