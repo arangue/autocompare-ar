@@ -2,6 +2,8 @@
 
 Scaffold for a used-car pricing and comparison app (Argentina).
 
+Full product and architecture design: [`docs/DESIGN.md`](docs/DESIGN.md).
+
 ## Architecture (clean / hexagonal)
 
 Dependency rule: **inward only**. Outer layers depend on inner layers, never the reverse.
