@@ -8,7 +8,7 @@ import "context"
 type VehicleRepository interface {
 	ListBrands(ctx context.Context) ([]Brand, error)
 	ListModelsByBrand(ctx context.Context, brandID int) ([]Model, error)
-	SearchTrims(ctx context.Context, query string, limit int) ([]Trim, error)
+	SearchTrims(ctx context.Context, query string, limit int) ([]TrimSearchResult, error)
 }
 
 type ListingRepository interface {
