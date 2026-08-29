@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,15 +26,20 @@ type searchTrimsUseCase interface {
 	Execute(ctx context.Context, query string, limit int) ([]domain.TrimSearchResult, error)
 }
 
+type getTrimUseCase interface {
+	Execute(ctx context.Context, id int) (domain.TrimDetail, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
 	searchTrims       searchTrimsUseCase
+	getTrim           getTrimUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -94,4 +100,34 @@ func (h *Handler) SearchTrims(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, trims)
+}
+
+func (h *Handler) GetTrim(w http.ResponseWriter, r *http.Request) {
+	trimIDInt, err := strconv.Atoi(r.PathValue("trim_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "trim_id must be an integer")
+		return
+	}
+
+	var requestedYear *int
+	if raw := r.URL.Query().Get("year"); raw != "" {
+		y, err := strconv.Atoi(raw)
+		if err != nil || y <= 0 {
+			writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year must be a positive integer")
+			return
+		}
+		requestedYear = &y
+	}
+
+	trim, err := h.getTrim.Execute(r.Context(), trimIDInt)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "trim not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get trim")
+		return
+	}
+	trim.RequestedYear = requestedYear
+	writeJSON(w, http.StatusOK, trim)
 }

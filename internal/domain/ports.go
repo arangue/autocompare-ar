@@ -9,6 +9,7 @@ type VehicleRepository interface {
 	ListBrands(ctx context.Context) ([]Brand, error)
 	ListModelsByBrand(ctx context.Context, brandID int) ([]Model, error)
 	SearchTrims(ctx context.Context, query string, limit int) ([]TrimSearchResult, error)
+	GetTrim(ctx context.Context, trimID int) (TrimDetail, error)
 }
 
 type ListingRepository interface {

@@ -46,9 +46,9 @@ Lists brands from the catalog.
 
 ```json
 [
-  {"ID":1,"Name":"Fiat","CreatedAt":"..."},
-  {"ID":2,"Name":"Toyota","CreatedAt":"..."},
-  {"ID":3,"Name":"Volkswagen","CreatedAt":"..."}
+  {"id":1,"name":"Fiat","created_at":"..."},
+  {"id":2,"name":"Toyota","created_at":"..."},
+  {"id":3,"name":"Volkswagen","created_at":"..."}
 ]
 ```
 
@@ -56,6 +56,30 @@ Lists brands from the catalog.
 
 ```json
 {"code":"INTERNAL_ERROR","message":"failed to list brands"}
+```
+
+### `GET /api/v1/brands/{brand_id}/models`
+
+Lists models for a brand. Unknown brand or no models returns `[]`.
+
+**200** — array of models
+
+```json
+[
+  {"id":1,"brand_id":2,"name":"Corolla","created_at":"..."}
+]
+```
+
+**400** — `brand_id` not an integer
+
+```json
+{"code":"INVALID_ID","message":"brand_id must be an integer"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to list models by brand"}
 ```
 
 ### `GET /api/v1/search/trims?q=&limit=`
@@ -88,6 +112,52 @@ Free-text search across brand, model, and trim names. Default `limit` is 20, max
 
 ```json
 {"code":"INTERNAL_ERROR","message":"failed to search trims"}
+```
+
+### `GET /api/v1/trims/{trim_id}?year=`
+
+Vehicle identity for one trim. `year` is optional and echoed as `requested_year` (must be a positive integer if present; not validated against listings).
+
+**200**
+
+```json
+{
+  "trim_id": 1,
+  "trim_name": "XEi 2.0 CVT",
+  "brand_id": 2,
+  "brand_name": "Toyota",
+  "model_id": 1,
+  "model_name": "Corolla",
+  "generation_id": 1,
+  "generation_name": "E210",
+  "year_from": 2019,
+  "year_to": 2026,
+  "requested_year": 2019
+}
+```
+
+**400** — `trim_id` not an integer
+
+```json
+{"code":"INVALID_ID","message":"trim_id must be an integer"}
+```
+
+**400** — `year` present but not a positive integer
+
+```json
+{"code":"INVALID_YEAR","message":"year must be a positive integer"}
+```
+
+**404**
+
+```json
+{"code":"NOT_FOUND","message":"trim not found"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to get trim"}
 ```
 
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
@@ -166,7 +236,9 @@ make web      # frontend on :3000
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8080/api/v1/brands
+curl http://localhost:8080/api/v1/brands/2/models
 curl 'http://localhost:8080/api/v1/search/trims?q=corolla'
+curl 'http://localhost:8080/api/v1/trims/1?year=2019'
 ```
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`

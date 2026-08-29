@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arangue/autocompare-ar/internal/domain"
@@ -92,4 +94,39 @@ func (r *VehicleRepository) SearchTrims(ctx context.Context, query string, limit
 		trims = append(trims, t)
 	}
 	return trims, rows.Err()
+}
+
+func (r *VehicleRepository) GetTrim(ctx context.Context, id int) (domain.TrimDetail, error) {
+	var d domain.TrimDetail
+	query := `SELECT
+				t.id,
+				t.name,
+				b.id,
+				b.name,
+				m.id,
+				m.name,
+				g.id,
+				g.name,
+				t.year_from,
+				t.year_to
+			FROM trims t
+			JOIN generations g ON g.id = t.generation_id
+			JOIN models m      ON m.id = g.model_id
+			JOIN brands b      ON b.id = m.brand_id
+			WHERE t.id = $1`
+
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&d.TrimID, &d.TrimName,
+		&d.BrandID, &d.BrandName,
+		&d.ModelID, &d.ModelName,
+		&d.GenerationID, &d.GenerationName,
+		&d.YearFrom, &d.YearTo,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.TrimDetail{}, domain.ErrNotFound
+		}
+		return domain.TrimDetail{}, err
+	}
+	return d, nil
 }
