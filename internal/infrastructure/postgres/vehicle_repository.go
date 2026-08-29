@@ -128,5 +128,55 @@ func (r *VehicleRepository) GetTrim(ctx context.Context, id int) (domain.TrimDet
 		}
 		return domain.TrimDetail{}, err
 	}
+
+	d.Features = []domain.VehicleFeature{}
+	if err := r.loadTrimSpecs(ctx, id, &d); err != nil {
+		return domain.TrimDetail{}, err
+	}
+	if err := r.loadTrimFeatures(ctx, id, &d); err != nil {
+		return domain.TrimDetail{}, err
+	}
 	return d, nil
+}
+
+func (r *VehicleRepository) loadTrimSpecs(ctx context.Context, trimID int, d *domain.TrimDetail) error {
+	var s domain.VehicleSpec
+	err := r.pool.QueryRow(ctx, `
+		SELECT engine, displacement_cc, horsepower, transmission, fuel,
+		       doors, seats, consumption_city, consumption_highway
+		FROM vehicle_specs
+		WHERE trim_id = $1`, trimID).Scan(
+		&s.Engine, &s.DisplacementCC, &s.Horsepower, &s.Transmission, &s.Fuel,
+		&s.Doors, &s.Seats, &s.ConsumptionCity, &s.ConsumptionHighway,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	d.Specs = &s
+	return nil
+}
+
+func (r *VehicleRepository) loadTrimFeatures(ctx context.Context, trimID int, d *domain.TrimDetail) error {
+	rows, err := r.pool.Query(ctx, `
+		SELECT f.code, f.name, f.category, vf.value
+		FROM vehicle_features vf
+		JOIN features f ON f.id = vf.feature_id
+		WHERE vf.trim_id = $1
+		ORDER BY f.category, f.name`, trimID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var f domain.VehicleFeature
+		if err := rows.Scan(&f.Code, &f.Name, &f.Category, &f.Value); err != nil {
+			return err
+		}
+		d.Features = append(d.Features, f)
+	}
+	return rows.Err()
 }
