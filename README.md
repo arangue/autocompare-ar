@@ -355,6 +355,70 @@ Compare an asking price to the market median and percentile band for a trim and 
 {"code":"INTERNAL_ERROR","message":"failed to assess deal"}
 ```
 
+### `GET /api/v1/compare?trim_ids=&year=`
+
+Side-by-side compare of 2–3 trims for one year: identity, key specs, market median, and a feature matrix.
+
+**200**
+
+```json
+{
+  "year": 2019,
+  "trims": [
+    {
+      "trim_id": 1,
+      "trim_name": "XEi 2.0 CVT",
+      "brand_name": "Toyota",
+      "model_name": "Corolla",
+      "specs": { "engine": "2.0", "transmission": "CVT", "horsepower": 170 },
+      "market": { "count": 10, "median": 26000000, "currency": "ARS" }
+    },
+    {
+      "trim_id": 2,
+      "trim_name": "XLi 1.8 CVT",
+      "brand_name": "Toyota",
+      "model_name": "Corolla",
+      "specs": { "engine": "1.8", "transmission": "CVT", "horsepower": 140 },
+      "market": { "count": 3, "median": 20500000, "currency": "ARS" }
+    }
+  ],
+  "features": [
+    {
+      "code": "airbags",
+      "name": "Airbags",
+      "category": "safety",
+      "values": { "1": "7", "2": "2" }
+    }
+  ]
+}
+```
+
+Missing feature values are `"—"`. UI: `/compare?trim_ids=1,2&year=2019`.
+
+**400** — `trim_ids` missing, not 2–3 integers, or not integers
+
+```json
+{"code":"INVALID_TRIM_IDS","message":"trim_ids must be 2 or 3 comma-separated integers"}
+```
+
+**400** — `year` missing or invalid
+
+```json
+{"code":"INVALID_YEAR","message":"year is required"}
+```
+
+**404** — any trim id missing
+
+```json
+{"code":"NOT_FOUND","message":"trim not found"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to compare trims"}
+```
+
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
 
 ## Architecture (clean / hexagonal)
@@ -441,6 +505,7 @@ curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000'
+curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&year=2019'
 ```
 
 ## Worker ingest

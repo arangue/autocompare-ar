@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/arangue/autocompare-ar/internal/application"
 	"github.com/arangue/autocompare-ar/internal/domain"
 )
 
@@ -278,4 +279,50 @@ func (h *Handler) AssessDeal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, assessment)
+}
+
+func (h *Handler) CompareTrims(w http.ResponseWriter, r *http.Request) {
+	rawYear := r.URL.Query().Get("year")
+	if rawYear == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year is required")
+		return
+	}
+	year, err := strconv.Atoi(rawYear)
+	if err != nil || year <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year must be a positive integer")
+		return
+	}
+
+	ids, ok := parseTrimIDs(r.URL.Query().Get("trim_ids"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_TRIM_IDS", "trim_ids must be 2 or 3 comma-separated integers")
+		return
+	}
+
+	result, err := application.NewCompareTrims(h.getTrim, h.getMarketSummary).Execute(r.Context(), ids, year)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "trim not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to compare trims")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func parseTrimIDs(raw string) ([]int, bool) {
+	parts := strings.Split(raw, ",")
+	if len(parts) < 2 || len(parts) > 3 {
+		return nil, false
+	}
+	ids := make([]int, 0, len(parts))
+	for _, part := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil || n <= 0 {
+			return nil, false
+		}
+		ids = append(ids, n)
+	}
+	return ids, true
 }
