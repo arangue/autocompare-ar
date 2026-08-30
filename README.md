@@ -293,6 +293,68 @@ Guide and fiscal reference prices (CCA, ACARA, DNRPA) for a trim and year. DNRPA
 {"code":"INTERNAL_ERROR","message":"failed to list references"}
 ```
 
+### `GET /api/v1/trims/{trim_id}/deal?year=&price=`
+
+Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”.
+
+**200** — enough listings
+
+```json
+{
+  "trim_id": 1,
+  "year": 2019,
+  "price": 21500000,
+  "currency": "ARS",
+  "status": "ok",
+  "band": "below",
+  "delta_ars": 4500000,
+  "delta_pct": 17.3,
+  "market": {
+    "count": 10,
+    "median": 26000000,
+    "p25": 25200000,
+    "p75": 27100000
+  },
+  "disclaimer": "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta."
+}
+```
+
+`delta_ars` is `median - price` (positive means cheaper than median). `delta_pct` is `(median - price) / median * 100`, one decimal. `band` is `below` if price &lt; p25, `near` if between p25 and p75, `above` if &gt; p75.
+
+**200** — insufficient data (`status` and `band` are `insufficient_data`, deltas `null`)
+
+```json
+{
+  "trim_id": 1,
+  "year": 2019,
+  "price": 21500000,
+  "currency": "ARS",
+  "status": "insufficient_data",
+  "band": "insufficient_data",
+  "delta_ars": null,
+  "delta_pct": null,
+  "market": {
+    "count": 0,
+    "median": null,
+    "p25": null,
+    "p75": null
+  },
+  "disclaimer": "No hay publicaciones suficientes para estimar el mercado de esta versión/año."
+}
+```
+
+**400** — `year` or `price` missing or invalid
+
+```json
+{"code":"INVALID_PRICE","message":"price is required"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to assess deal"}
+```
+
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
 
 ## Architecture (clean / hexagonal)
@@ -375,6 +437,7 @@ curl 'http://localhost:8080/api/v1/trims/1?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
+curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000'
 ```
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`

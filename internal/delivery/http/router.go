@@ -12,5 +12,6 @@ func NewRouter(h *Handler) http.Handler {
 	mux.HandleFunc("GET /api/v1/trims/{trim_id}/listings", h.ListListings)
 	mux.HandleFunc("GET /api/v1/trims/{trim_id}/market", h.GetMarketSummary)
 	mux.HandleFunc("GET /api/v1/trims/{trim_id}/references", h.ListReferences)
+	mux.HandleFunc("GET /api/v1/trims/{trim_id}/deal", h.AssessDeal)
 	return mux
 }

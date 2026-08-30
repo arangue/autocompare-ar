@@ -64,6 +64,12 @@ func (stubListReferences) Execute(context.Context, int, int) ([]domain.Reference
 	return nil, nil
 }
 
+type stubAssessDeal struct{}
+
+func (stubAssessDeal) Execute(context.Context, int, int, int64) (domain.DealAssessment, error) {
+	return domain.DealAssessment{Currency: "ARS", Status: domain.DealStatusInsufficientData, Band: domain.DealBandInsufficientData}, nil
+}
+
 func newTestHandler() *Handler {
 	return NewHandler(
 		stubListBrands{},
@@ -73,6 +79,7 @@ func newTestHandler() *Handler {
 		stubListListings{},
 		stubGetMarketSummary{},
 		stubListReferences{},
+		stubAssessDeal{},
 		stubPinger{},
 	)
 }
@@ -86,6 +93,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 		stubListListings{},
 		stubGetMarketSummary{},
 		stubListReferences{},
+		stubAssessDeal{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -135,6 +143,7 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubListListings{},
 		stubGetMarketSummary{},
 		stubListReferences{},
+		stubAssessDeal{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
@@ -172,6 +181,44 @@ func TestGetMarketSummary_missingYear(t *testing.T) {
 	req.SetPathValue("trim_id", "1")
 	rec := httptest.NewRecorder()
 	h.GetMarketSummary(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_YEAR" {
+		t.Fatalf("code = %q", errBody.Code)
+	}
+}
+
+func TestAssessDeal_missingPrice(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/deal?year=2019", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.AssessDeal(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_PRICE" {
+		t.Fatalf("code = %q", errBody.Code)
+	}
+}
+
+func TestAssessDeal_missingYear(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/deal?price=21500000", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.AssessDeal(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())

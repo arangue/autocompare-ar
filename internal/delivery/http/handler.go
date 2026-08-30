@@ -42,6 +42,10 @@ type listReferencesUseCase interface {
 	Execute(ctx context.Context, trimID, year int) ([]domain.ReferencePrice, error)
 }
 
+type assessDealUseCase interface {
+	Execute(ctx context.Context, trimID, year int, price int64) (domain.DealAssessment, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
@@ -50,11 +54,12 @@ type Handler struct {
 	listListings      listListingsUseCase
 	getMarketSummary  getMarketSummaryUseCase
 	listReferences    listReferencesUseCase
+	assessDeal        assessDealUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, assessDeal assessDealUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, assessDeal: assessDeal, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -236,4 +241,41 @@ func (h *Handler) ListReferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, references)
+}
+
+func (h *Handler) AssessDeal(w http.ResponseWriter, r *http.Request) {
+	trimID, err := strconv.Atoi(r.PathValue("trim_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "trim_id must be an integer")
+		return
+	}
+
+	rawYear := r.URL.Query().Get("year")
+	if rawYear == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year is required")
+		return
+	}
+	year, err := strconv.Atoi(rawYear)
+	if err != nil || year <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year must be a positive integer")
+		return
+	}
+
+	rawPrice := r.URL.Query().Get("price")
+	if rawPrice == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_PRICE", "price is required")
+		return
+	}
+	price, err := strconv.ParseInt(rawPrice, 10, 64)
+	if err != nil || price <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_PRICE", "price must be a positive integer")
+		return
+	}
+
+	assessment, err := h.assessDeal.Execute(r.Context(), trimID, year, price)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to assess deal")
+		return
+	}
+	writeJSON(w, http.StatusOK, assessment)
 }
