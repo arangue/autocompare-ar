@@ -86,7 +86,12 @@ export default async function ComparePage({
   const trimIds = queryValue(params.trim_ids);
   const year = queryValue(params.year);
 
-  if (!trimIds || !year) {
+  const idCount = trimIds
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean).length;
+
+  if (!trimIds || !year || idCount < 2) {
     return (
       <main className="mx-auto w-full max-w-4xl px-6 py-16">
         <Link href="/" className="text-sm font-medium text-emerald-700 hover:underline">
@@ -94,14 +99,26 @@ export default async function ComparePage({
         </Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-zinc-900">Comparar</h1>
         <p className="mt-4 text-zinc-600">
-          Elegí 2 o 3 versiones y un año. Ejemplo:{" "}
-          <Link
-            href="/compare?trim_ids=1,2&year=2019"
-            className="font-medium text-emerald-700 hover:underline"
-          >
-            Corolla XEi vs XLi 2019
-          </Link>
-          .
+          {idCount === 1 ? (
+            <>
+              Versión agregada.{" "}
+              <Link href="/" className="font-medium text-emerald-700 hover:underline">
+                Buscá otra
+              </Link>{" "}
+              y tocá Comparar.
+            </>
+          ) : (
+            <>
+              Elegí 2 o 3 versiones y un año. Ejemplo:{" "}
+              <Link
+                href="/compare?trim_ids=1,2&year=2019"
+                className="font-medium text-emerald-700 hover:underline"
+              >
+                Corolla XEi vs XLi 2019
+              </Link>
+              .
+            </>
+          )}
         </p>
       </main>
     );

@@ -42,6 +42,25 @@ function referenceKindLabel(kind: string): string {
   return kind;
 }
 
+const COMPARE_IDS_KEY = "compare_trim_ids";
+
+function readCompareIds(): number[] {
+  return (sessionStorage.getItem(COMPARE_IDS_KEY) ?? "")
+    .split(",")
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0)
+    .slice(0, 3);
+}
+
+function addCompareId(trimId: number): number[] {
+  const ids = readCompareIds();
+  if (!ids.includes(trimId) && ids.length < 3) {
+    ids.push(trimId);
+    sessionStorage.setItem(COMPARE_IDS_KEY, ids.join(","));
+  }
+  return ids;
+}
+
 function groupFeaturesByCategory(
   features: TrimDetail["features"],
 ): Map<string, TrimDetail["features"]> {
@@ -219,25 +238,37 @@ export function VehicleSheet() {
             : ""}
         </p>
 
-        {years.length > 0 ? (
-          <div className="mt-4">
-            <label htmlFor="year-select" className="text-sm text-zinc-600">
-              Año
-            </label>
-            <select
-              id="year-select"
-              value={year}
-              onChange={(event) => onYearChange(Number(event.target.value))}
-              className="mt-1 block rounded-xl border border-zinc-300 bg-white px-4 py-2 text-base outline-none ring-emerald-600/30 focus:border-emerald-600 focus:ring-2"
-            >
-              {years.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          {years.length > 0 ? (
+            <div>
+              <label htmlFor="year-select" className="text-sm text-zinc-600">
+                Año
+              </label>
+              <select
+                id="year-select"
+                value={year}
+                onChange={(event) => onYearChange(Number(event.target.value))}
+                className="mt-1 block rounded-xl border border-zinc-300 bg-white px-4 py-2 text-base outline-none ring-emerald-600/30 focus:border-emerald-600 focus:ring-2"
+              >
+                {years.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              const ids = addCompareId(trimId);
+              router.push(`/compare?trim_ids=${ids.join(",")}&year=${year}`);
+            }}
+            className="rounded-xl bg-emerald-700 px-5 py-2 text-base font-medium text-white transition hover:bg-emerald-800"
+          >
+            Comparar
+          </button>
+        </div>
       </header>
 
       {error ? (
