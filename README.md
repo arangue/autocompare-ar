@@ -250,6 +250,49 @@ Market price distribution from active listings for a trim and year.
 {"code":"INTERNAL_ERROR","message":"failed to get market summary"}
 ```
 
+### `GET /api/v1/trims/{trim_id}/references?year=`
+
+Guide and fiscal reference prices (CCA, ACARA, DNRPA) for a trim and year. DNRPA is labeled `kind: "fiscal"`; guides use `kind: "guide"`. These are estimative inputs, not market prices.
+
+**200** — array of references (empty if none)
+
+```json
+[
+  {
+    "id": 1,
+    "trim_id": 1,
+    "year": 2019,
+    "source": "CCA",
+    "kind": "guide",
+    "price": 25500000,
+    "currency": "ARS",
+    "observed_at": "2026-08-29T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "trim_id": 1,
+    "year": 2019,
+    "source": "DNRPA",
+    "kind": "fiscal",
+    "price": 24100000,
+    "currency": "ARS",
+    "observed_at": "2026-08-29T00:00:00Z"
+  }
+]
+```
+
+**400** — `year` missing or invalid
+
+```json
+{"code":"INVALID_YEAR","message":"year is required"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to list references"}
+```
+
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
 
 ## Architecture (clean / hexagonal)
@@ -331,6 +374,7 @@ curl 'http://localhost:8080/api/v1/search/trims?q=corolla'
 curl 'http://localhost:8080/api/v1/trims/1?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
+curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
 ```
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`

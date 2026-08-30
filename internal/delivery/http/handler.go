@@ -38,6 +38,10 @@ type getMarketSummaryUseCase interface {
 	Execute(ctx context.Context, trimID, year int) (domain.TrimMarketSummary, error)
 }
 
+type listReferencesUseCase interface {
+	Execute(ctx context.Context, trimID, year int) ([]domain.ReferencePrice, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
@@ -45,11 +49,12 @@ type Handler struct {
 	getTrim           getTrimUseCase
 	listListings      listListingsUseCase
 	getMarketSummary  getMarketSummaryUseCase
+	listReferences    listReferencesUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -205,4 +210,30 @@ func (h *Handler) GetMarketSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (h *Handler) ListReferences(w http.ResponseWriter, r *http.Request) {
+	trimID, err := strconv.Atoi(r.PathValue("trim_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "trim_id must be an integer")
+		return
+	}
+
+	rawYear := r.URL.Query().Get("year")
+	if rawYear == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year is required")
+		return
+	}
+	year, err := strconv.Atoi(rawYear)
+	if err != nil || year <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year must be a positive integer")
+		return
+	}
+
+	references, err := h.listReferences.Execute(r.Context(), trimID, year)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list references")
+		return
+	}
+	writeJSON(w, http.StatusOK, references)
 }

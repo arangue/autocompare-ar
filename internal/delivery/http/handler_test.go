@@ -58,6 +58,12 @@ func (stubGetMarketSummary) Execute(context.Context, int, int) (domain.TrimMarke
 	return domain.TrimMarketSummary{Currency: "ARS"}, nil
 }
 
+type stubListReferences struct{}
+
+func (stubListReferences) Execute(context.Context, int, int) ([]domain.ReferencePrice, error) {
+	return nil, nil
+}
+
 func newTestHandler() *Handler {
 	return NewHandler(
 		stubListBrands{},
@@ -66,6 +72,7 @@ func newTestHandler() *Handler {
 		stubGetTrim{},
 		stubListListings{},
 		stubGetMarketSummary{},
+		stubListReferences{},
 		stubPinger{},
 	)
 }
@@ -78,6 +85,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 		stubGetTrim{},
 		stubListListings{},
 		stubGetMarketSummary{},
+		stubListReferences{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -126,6 +134,7 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubGetTrim{err: domain.ErrNotFound},
 		stubListListings{},
 		stubGetMarketSummary{},
+		stubListReferences{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
