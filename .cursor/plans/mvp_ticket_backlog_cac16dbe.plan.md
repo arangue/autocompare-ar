@@ -13,31 +13,31 @@ todos:
     status: completed
   - id: t4-specs-features
     content: "T4: migration + seed specs/features; enrich trim detail"
-    status: pending
+    status: completed
   - id: t5-listings
     content: "T5: vehicle_listings migration/seed + list endpoint"
-    status: pending
+    status: completed
   - id: t6-market
     content: "T6: market summary percentiles endpoint"
-    status: pending
+    status: completed
   - id: t7-references
     content: "T7: price_references migration/seed + list endpoint"
-    status: pending
+    status: completed
   - id: t8-deal
     content: "T8: AssessDeal use case + /deal endpoint"
-    status: pending
+    status: completed
   - id: t9-web-shell
     content: "T9: Next.js shell + API client"
-    status: pending
+    status: completed
   - id: t10-vehicle-ui
     content: "T10: search → vehicle page with deal badge"
-    status: pending
+    status: completed
   - id: t11-worker-ingest
     content: "T11: worker + CSV/JSON listing upsert importer"
-    status: pending
+    status: completed
   - id: t12-live-source
     content: "T12 (stretch): one allowed live market source"
-    status: pending
+    status: cancelled
   - id: t13-comparator
     content: "T13: compare API + side-by-side UI"
     status: pending
@@ -1487,6 +1487,8 @@ sequenceDiagram
 ---
 
 ## T12 — First allowed live market source (stretch)
+
+**Cancelled for MVP.** File ingest (T11) + seed listings are enough. Do not add a live Mercado Libre importer until the Corolla path is proven by hand.
 
 | Field | Value |
 |-------|-------|

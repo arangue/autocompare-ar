@@ -1,4 +1,4 @@
-// Package ingestion contains adapters that import data from external sources
-// (CCA, ACARA, classifieds). Each subpackage implements a fetch-and-upsert
-// pipeline against domain ports.
+// Package ingestion imports classified listings into vehicle_listings via
+// ListingRepository.Upsert. file_listings.go reads local JSON/CSV. Guide prices
+// (CCA/ACARA/DNRPA) are not ingested here — see DESIGN.md §9.
 package ingestion

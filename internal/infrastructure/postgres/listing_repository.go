@@ -2,11 +2,15 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arangue/autocompare-ar/internal/domain"
 )
+
+var ErrUnknownTrim = errors.New("unknown trim_id")
 
 type ListingRepository struct {
 	pool *pgxpool.Pool
@@ -65,4 +69,34 @@ func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int)
 		return domain.MarketSummary{}, err
 	}
 	return summary, nil
+}
+
+func (r *ListingRepository) Upsert(ctx context.Context, listing domain.Listing) (bool, error) {
+	var inserted bool
+	err := r.pool.QueryRow(ctx, `
+		INSERT INTO vehicle_listings (
+			source, external_id, trim_id, year, km, price, currency, location, url, last_seen_at, active
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), TRUE)
+		ON CONFLICT (source, external_id) DO UPDATE SET
+			trim_id = EXCLUDED.trim_id,
+			year = EXCLUDED.year,
+			km = EXCLUDED.km,
+			price = EXCLUDED.price,
+			currency = EXCLUDED.currency,
+			location = EXCLUDED.location,
+			url = EXCLUDED.url,
+			last_seen_at = NOW(),
+			active = TRUE
+		RETURNING (xmax = 0)`,
+		listing.Source, listing.ExternalID, listing.TrimID, listing.Year,
+		listing.KM, listing.Price, listing.Currency, listing.Location, listing.URL,
+	).Scan(&inserted)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return false, ErrUnknownTrim
+		}
+		return false, err
+	}
+	return inserted, nil
 }

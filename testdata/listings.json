@@ -1,0 +1,35 @@
+[
+  {
+    "source": "file",
+    "external_id": "file-corolla-xei-2019-01",
+    "trim_id": 1,
+    "year": 2019,
+    "km": 101000,
+    "price": 24600000,
+    "currency": "ARS",
+    "location": "Rosario",
+    "url": "https://example.com/listings/file-corolla-xei-2019-01"
+  },
+  {
+    "source": "file",
+    "external_id": "file-corolla-xei-2019-02",
+    "trim_id": 1,
+    "year": 2019,
+    "km": 64000,
+    "price": 27200000,
+    "currency": "ARS",
+    "location": "Córdoba",
+    "url": "https://example.com/listings/file-corolla-xei-2019-02"
+  },
+  {
+    "source": "file",
+    "external_id": "file-golf-comfortline-2019-01",
+    "trim_id": 4,
+    "year": 2019,
+    "km": 110000,
+    "price": 19900000,
+    "currency": "ARS",
+    "location": "Buenos Aires",
+    "url": "https://example.com/listings/file-golf-comfortline-2019-01"
+  }
+]

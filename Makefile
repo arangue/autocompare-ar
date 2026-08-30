@@ -1,7 +1,10 @@
-include .env
+-include .env
 export
 
-.PHONY: help dev db-up db-down api web fmt tidy clean
+DATABASE_URL ?= postgres://user:password@localhost:5435/autocompare_db?sslmode=disable
+INGEST_FILE ?= testdata/listings.json
+
+.PHONY: help dev db-up db-down api web ingest fmt tidy clean
 
 help:
 	@echo "  make dev     -> start Postgres and run the API"
@@ -9,6 +12,7 @@ help:
 	@echo "  make db-down -> stop Postgres"
 	@echo "  make api     -> run API (requires DATABASE_URL)"
 	@echo "  make web     -> run Next.js frontend"
+	@echo "  make ingest  -> upsert listings from INGEST_FILE (default testdata/listings.json)"
 	@echo "  make clean   -> remove containers and volumes"
 
 dev: db-up
@@ -25,7 +29,10 @@ api:
 	go run ./cmd/server
 
 web:
-	cd web && npm run dev
+	cd web && PORT=3000 npm run dev
+
+ingest:
+	go run ./cmd/worker $(INGEST_FILE)
 
 fmt:
 	go fmt ./...

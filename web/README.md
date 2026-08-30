@@ -21,6 +21,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Search a trim on the home page, then open `/trims/{id}?year=` for market data, references, specs, listings, and the deal calculator.
+
 ## API client
 
 Typed helpers live in `src/lib/api.ts`:

@@ -15,6 +15,8 @@ type VehicleRepository interface {
 type ListingRepository interface {
 	ListByTrimYear(ctx context.Context, trimID, year, limit int) ([]Listing, error)
 	MarketSummary(ctx context.Context, trimID, year int) (MarketSummary, error)
+	// Upsert inserts or updates by (source, external_id). inserted is true on insert.
+	Upsert(ctx context.Context, listing Listing) (inserted bool, err error)
 }
 
 type PricingRepository interface {

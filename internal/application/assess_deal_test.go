@@ -20,6 +20,10 @@ func (f fakeListingRepo) MarketSummary(context.Context, int, int) (domain.Market
 	return f.summary, f.err
 }
 
+func (f fakeListingRepo) Upsert(context.Context, domain.Listing) (bool, error) {
+	return false, nil
+}
+
 func int64Ptr(v int64) *int64 { return &v }
 
 func TestAssessDeal_insufficientData(t *testing.T) {

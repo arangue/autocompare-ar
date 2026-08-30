@@ -393,7 +393,7 @@ internal/infrastructure/    driven adapters  (postgres, ingestion, APIs)
 | `application/`              | Use cases: `ListBrands`, `GetMarketSummary`, `AssessDeal`, … |
 | `delivery/http/`            | Handlers, router, middleware, JSON helpers                   |
 | `infrastructure/postgres/`  | Repository implementations + migrations wiring               |
-| `infrastructure/ingestion/` | CCA, ACARA, MercadoLibre importers                           |
+| `infrastructure/ingestion/` | File (JSON/CSV) listing importer                             |
 | `migrations/`               | SQL schema                                                   |
 | `web/`                      | Next.js UI                                                   |
 
@@ -404,7 +404,7 @@ Handlers live in `internal/delivery/http/`. `main.go` creates repos → use case
 
 ```text
 cmd/server/     HTTP API entrypoint
-cmd/worker/     background jobs (stub)
+cmd/worker/     listing file ingest
 internal/
   domain/       entities + ports
   application/  use cases
@@ -422,11 +422,14 @@ web/
 Postgres is required (the API pings the DB on `/health` and runs migrations on startup).
 
 ```bash
-cp .env.example .env
-make db-up    # Postgres on :5435
-make dev      # API on :8080
-make web      # frontend on :3000
+cp .env.example .env   # optional; make uses the same defaults without it
+make db-up             # Postgres on :5435
+make dev               # API on :8080 (terminal 1)
+cd web && npm install && cd ..
+make web               # frontend on :3000 (terminal 2)
 ```
+
+Manual MVP path: open [http://localhost:3000](http://localhost:3000), search `corolla`, open **XEi 2.0 CVT** (year 2019), type `21500000` in ¿Está barato?. Expect a below-market badge, CCA/ACARA/DNRPA in Referencias, and seeded listings.
 
 ```bash
 curl http://localhost:8080/health
@@ -439,5 +442,37 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000'
 ```
+
+## Worker ingest
+
+`cmd/worker` upserts classified listings. Not an HTTP endpoint. Upsert key is `(source, external_id)`.
+
+```bash
+make ingest                                      # testdata/listings.json
+go run ./cmd/worker path/to/file.csv             # or set INGEST_FILE
+go run ./cmd/worker -dry-run testdata/listings.json
+```
+
+It does not scrape CCA, ACARA, Mercado Libre, or classifieds HTML — see [DESIGN.md](DESIGN.md) §9.
+
+JSON shape:
+
+```json
+[
+  {
+    "source": "file",
+    "external_id": "ml-123",
+    "trim_id": 1,
+    "year": 2019,
+    "km": 98000,
+    "price": 24800000,
+    "currency": "ARS",
+    "location": "Rosario",
+    "url": "https://example.com/x"
+  }
+]
+```
+
+`trim_id` must already exist in the catalog. Unknown trims are skipped.
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`
