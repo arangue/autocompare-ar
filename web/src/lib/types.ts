@@ -100,6 +100,40 @@ export type DealAssessment = {
   disclaimer: string;
 };
 
+export type CompareSpecs = {
+  engine: string;
+  transmission: string;
+  horsepower: number | null;
+};
+
+export type CompareMarket = {
+  count: number;
+  median: number | null;
+  currency: string;
+};
+
+export type CompareTrim = {
+  trim_id: number;
+  trim_name: string;
+  brand_name: string;
+  model_name: string;
+  specs: CompareSpecs | null;
+  market: CompareMarket;
+};
+
+export type CompareFeature = {
+  code: string;
+  name: string;
+  category: string;
+  values: Record<string, string>;
+};
+
+export type CompareResult = {
+  year: number;
+  trims: CompareTrim[];
+  features: CompareFeature[];
+};
+
 export type ApiErrorBody = {
   code: string;
   message: string;

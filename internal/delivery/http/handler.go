@@ -47,6 +47,10 @@ type assessDealUseCase interface {
 	Execute(ctx context.Context, trimID, year int, price int64) (domain.DealAssessment, error)
 }
 
+type compareTrimsUseCase interface {
+	Execute(ctx context.Context, trimIDs []int, year int) (application.CompareResult, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
@@ -56,11 +60,12 @@ type Handler struct {
 	getMarketSummary  getMarketSummaryUseCase
 	listReferences    listReferencesUseCase
 	assessDeal        assessDealUseCase
+	compareTrims      compareTrimsUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, assessDeal assessDealUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, assessDeal: assessDeal, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, assessDeal assessDealUseCase, compareTrims compareTrimsUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, assessDeal: assessDeal, compareTrims: compareTrims, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -299,7 +304,7 @@ func (h *Handler) CompareTrims(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := application.NewCompareTrims(h.getTrim, h.getMarketSummary).Execute(r.Context(), ids, year)
+	result, err := h.compareTrims.Execute(r.Context(), ids, year)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "trim not found")

@@ -1,5 +1,6 @@
 import type {
   ApiErrorBody,
+  CompareResult,
   DealAssessment,
   Listing,
   ReferencePrice,
@@ -96,4 +97,12 @@ export function getReferences(
   return fetchJSON<ReferencePrice[]>(
     `/api/v1/trims/${trimId}/references?year=${year}`,
   );
+}
+
+export function getCompare(trimIds: number[], year: number): Promise<CompareResult> {
+  const params = new URLSearchParams({
+    trim_ids: trimIds.join(","),
+    year: String(year),
+  });
+  return fetchJSON<CompareResult>(`/api/v1/compare?${params}`);
 }

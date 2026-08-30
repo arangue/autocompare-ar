@@ -40,7 +40,7 @@ todos:
     status: cancelled
   - id: t13-comparator
     content: "T13: compare API + side-by-side UI"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -124,7 +124,7 @@ Content-Type: `application/json; charset=utf-8`
 | Planned | GET | `/api/v1/trims/{trim_id}/market` | T6 |
 | Planned | GET | `/api/v1/trims/{trim_id}/references` | T7 |
 | Planned | GET | `/api/v1/trims/{trim_id}/deal` | T8 |
-| Planned | GET | `/api/v1/compare` | T13 |
+| Done | GET | `/api/v1/compare` | T13 |
 
 Worker ingest (T11/T12) is **CLI**, not HTTP.
 
@@ -465,7 +465,7 @@ Compare an asking price to market median / band.
 
 ---
 
-### `GET /api/v1/compare` — planned (T13)
+### `GET /api/v1/compare` — done (T13)
 
 Side-by-side up to 3 trims for one year.
 

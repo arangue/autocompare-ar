@@ -33,5 +33,8 @@ Typed helpers live in `src/lib/api.ts`:
 - `getDeal`
 - `getListings`
 - `getReferences`
+- `getCompare`
 
 Types mirror the Go API JSON in `src/lib/types.ts`.
+
+Compare page: `/compare?trim_ids=1,2&year=2019` (add trims via **Comparar** on the vehicle sheet).

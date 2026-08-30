@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/arangue/autocompare-ar/internal/application"
 	"github.com/arangue/autocompare-ar/internal/domain"
 )
 
@@ -81,6 +82,15 @@ func (stubAssessDeal) Execute(context.Context, int, int, int64) (domain.DealAsse
 	return domain.DealAssessment{Currency: "ARS", Status: domain.DealStatusInsufficientData, Band: domain.DealBandInsufficientData}, nil
 }
 
+type stubCompareTrims struct {
+	result application.CompareResult
+	err    error
+}
+
+func (s stubCompareTrims) Execute(context.Context, []int, int) (application.CompareResult, error) {
+	return s.result, s.err
+}
+
 func newTestHandler() *Handler {
 	return NewHandler(
 		stubListBrands{},
@@ -91,6 +101,7 @@ func newTestHandler() *Handler {
 		stubGetMarketSummary{},
 		stubListReferences{},
 		stubAssessDeal{},
+		stubCompareTrims{},
 		stubPinger{},
 	)
 }
@@ -105,6 +116,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 		stubGetMarketSummary{},
 		stubListReferences{},
 		stubAssessDeal{},
+		stubCompareTrims{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -155,6 +167,7 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubGetMarketSummary{},
 		stubListReferences{},
 		stubAssessDeal{},
+		stubCompareTrims{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
@@ -244,15 +257,17 @@ func TestCompareTrims_invalidIDs(t *testing.T) {
 }
 
 func TestCompareTrims_notFound(t *testing.T) {
+	compare := application.NewCompareTrims(stubGetTrim{err: domain.ErrNotFound}, stubGetMarketSummary{})
 	h := NewHandler(
 		stubListBrands{},
 		stubListModels{},
 		stubSearchTrims{},
-		stubGetTrim{err: domain.ErrNotFound},
+		stubGetTrim{},
 		stubListListings{},
 		stubGetMarketSummary{},
 		stubListReferences{},
 		stubAssessDeal{},
+		compare,
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/compare?trim_ids=1,99&year=2019", nil)
@@ -265,26 +280,29 @@ func TestCompareTrims_notFound(t *testing.T) {
 
 func TestCompareTrims_ok(t *testing.T) {
 	hp := 170
+	getTrim := stubGetTrim{byID: map[int]domain.TrimDetail{
+		1: {
+			TrimID: 1, TrimName: "XEi 2.0 CVT", BrandName: "Toyota", ModelName: "Corolla",
+			Specs:    &domain.VehicleSpec{Engine: "2.0", Transmission: "CVT", Horsepower: &hp},
+			Features: []domain.VehicleFeature{{Code: "airbags", Name: "Airbags", Category: "safety", Value: "7"}},
+		},
+		2: {
+			TrimID: 2, TrimName: "XLi 1.8 CVT", BrandName: "Toyota", ModelName: "Corolla",
+			Specs:    &domain.VehicleSpec{Engine: "1.8", Transmission: "CVT"},
+			Features: []domain.VehicleFeature{{Code: "esp", Name: "ESP", Category: "safety", Value: "true"}},
+		},
+	}}
+	compare := application.NewCompareTrims(getTrim, stubGetMarketSummary{})
 	h := NewHandler(
 		stubListBrands{},
 		stubListModels{},
 		stubSearchTrims{},
-		stubGetTrim{byID: map[int]domain.TrimDetail{
-			1: {
-				TrimID: 1, TrimName: "XEi 2.0 CVT", BrandName: "Toyota", ModelName: "Corolla",
-				Specs:    &domain.VehicleSpec{Engine: "2.0", Transmission: "CVT", Horsepower: &hp},
-				Features: []domain.VehicleFeature{{Code: "airbags", Name: "Airbags", Category: "safety", Value: "7"}},
-			},
-			2: {
-				TrimID: 2, TrimName: "XLi 1.8 CVT", BrandName: "Toyota", ModelName: "Corolla",
-				Specs:    &domain.VehicleSpec{Engine: "1.8", Transmission: "CVT"},
-				Features: []domain.VehicleFeature{{Code: "esp", Name: "ESP", Category: "safety", Value: "true"}},
-			},
-		}},
+		getTrim,
 		stubListListings{},
 		stubGetMarketSummary{},
 		stubListReferences{},
 		stubAssessDeal{},
+		compare,
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/compare?trim_ids=1,2&year=2019", nil)
