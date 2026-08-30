@@ -160,6 +160,48 @@ Vehicle identity for one trim. `year` is optional and echoed as `requested_year`
 {"code":"INTERNAL_ERROR","message":"failed to get trim"}
 ```
 
+### `GET /api/v1/trims/{trim_id}/listings?year=&limit=`
+
+Active listings for a trim and year, ordered by price ascending. Default `limit` is 50, max 100.
+
+**200** — array of listings (empty if none)
+
+```json
+[
+  {
+    "id": 1,
+    "source": "seed",
+    "external_id": "seed-corolla-xei-2019-01",
+    "trim_id": 1,
+    "year": 2019,
+    "km": 120000,
+    "price": 22500000,
+    "currency": "ARS",
+    "location": "Córdoba",
+    "url": "https://example.com/listings/seed-corolla-xei-2019-01",
+    "last_seen_at": "2026-08-29T00:00:00Z"
+  }
+]
+```
+
+**400** — `year` missing or invalid
+
+```json
+{"code":"INVALID_YEAR","message":"year is required"}
+```
+
+**400** — `limit` not a positive integer
+
+```json
+{"code":"INVALID_LIMIT","message":"limit must be a positive integer"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to list listings"}
+```
+
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
 
 ## Architecture (clean / hexagonal)
@@ -239,6 +281,7 @@ curl http://localhost:8080/api/v1/brands
 curl http://localhost:8080/api/v1/brands/2/models
 curl 'http://localhost:8080/api/v1/search/trims?q=corolla'
 curl 'http://localhost:8080/api/v1/trims/1?year=2019'
+curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
 ```
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`

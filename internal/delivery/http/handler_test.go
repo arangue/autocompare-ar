@@ -44,12 +44,21 @@ func (s stubGetTrim) Execute(context.Context, int) (domain.TrimDetail, error) {
 	return s.detail, s.err
 }
 
+type stubListListings struct {
+	listings []domain.Listing
+}
+
+func (s stubListListings) Execute(context.Context, int, int, int) ([]domain.Listing, error) {
+	return s.listings, nil
+}
+
 func TestListBrands_snakeCaseJSON(t *testing.T) {
 	h := NewHandler(
 		stubListBrands{brands: []domain.Brand{{ID: 1, Name: "Toyota", CreatedAt: time.Unix(0, 0).UTC()}}},
 		stubListModels{},
 		stubSearchTrims{},
 		stubGetTrim{},
+		stubListListings{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -72,7 +81,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 }
 
 func TestGetTrim_invalidYear(t *testing.T) {
-	h := NewHandler(stubListBrands{}, stubListModels{}, stubSearchTrims{}, stubGetTrim{}, stubPinger{})
+	h := NewHandler(stubListBrands{}, stubListModels{}, stubSearchTrims{}, stubGetTrim{}, stubListListings{}, stubPinger{})
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1?year=0", nil)
 	req.SetPathValue("trim_id", "1")
 	rec := httptest.NewRecorder()
@@ -96,6 +105,7 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubListModels{},
 		stubSearchTrims{},
 		stubGetTrim{err: domain.ErrNotFound},
+		stubListListings{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
@@ -105,5 +115,24 @@ func TestGetTrim_notFound(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
+func TestListListings_missingYear(t *testing.T) {
+	h := NewHandler(stubListBrands{}, stubListModels{}, stubSearchTrims{}, stubGetTrim{}, stubListListings{}, stubPinger{})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/listings", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.ListListings(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_YEAR" {
+		t.Fatalf("code = %q", errBody.Code)
 	}
 }

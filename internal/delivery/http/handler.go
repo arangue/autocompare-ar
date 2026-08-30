@@ -30,16 +30,21 @@ type getTrimUseCase interface {
 	Execute(ctx context.Context, id int) (domain.TrimDetail, error)
 }
 
+type listListingsUseCase interface {
+	Execute(ctx context.Context, trimID, year, limit int) ([]domain.Listing, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
 	searchTrims       searchTrimsUseCase
 	getTrim           getTrimUseCase
+	listListings      listListingsUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -130,4 +135,43 @@ func (h *Handler) GetTrim(w http.ResponseWriter, r *http.Request) {
 	}
 	trim.RequestedYear = requestedYear
 	writeJSON(w, http.StatusOK, trim)
+}
+
+func (h *Handler) ListListings(w http.ResponseWriter, r *http.Request) {
+	trimID, err := strconv.Atoi(r.PathValue("trim_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "trim_id must be an integer")
+		return
+	}
+
+	rawYear := r.URL.Query().Get("year")
+	if rawYear == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year is required")
+		return
+	}
+	year, err := strconv.Atoi(rawYear)
+	if err != nil || year <= 0 {
+		writeError(w, http.StatusBadRequest, "INVALID_YEAR", "year must be a positive integer")
+		return
+	}
+
+	limit := 50
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			writeError(w, http.StatusBadRequest, "INVALID_LIMIT", "limit must be a positive integer")
+			return
+		}
+		limit = n
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	listings, err := h.listListings.Execute(r.Context(), trimID, year, limit)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list listings")
+		return
+	}
+	writeJSON(w, http.StatusOK, listings)
 }

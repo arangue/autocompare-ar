@@ -59,11 +59,13 @@ func main() {
 	}
 
 	vehicleRepo := postgres.NewVehicleRepository(pool)
+	listingRepo := postgres.NewListingRepository(pool)
 	listBrands := application.NewListBrands(vehicleRepo)
 	listModelsByBrand := application.NewListModelsByBrand(vehicleRepo)
 	searchTrims := application.NewSearchTrims(vehicleRepo)
 	getTrim := application.NewGetTrimService(vehicleRepo)
-	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, pool)
+	listListings := application.NewListListings(listingRepo)
+	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, listListings, pool)
 	router := httpdelivery.NewRouter(handler)
 
 	port := os.Getenv("PORT")

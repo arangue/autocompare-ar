@@ -3,17 +3,17 @@ package domain
 import "time"
 
 type Listing struct {
-	ID         int64
-	Source     string
-	ExternalID string
-	TrimID     *int
-	Year       int
-	KM         *int
-	Price      int64
-	Currency   string
-	Location   *string
-	URL        *string
-	LastSeenAt time.Time
+	ID         int64     `json:"id"`
+	Source     string    `json:"source"`
+	ExternalID string    `json:"external_id"`
+	TrimID     int       `json:"trim_id"`
+	Year       int       `json:"year"`
+	KM         *int      `json:"km"`
+	Price      int64     `json:"price"`
+	Currency   string    `json:"currency"`
+	Location   *string   `json:"location"`
+	URL        *string   `json:"url"`
+	LastSeenAt time.Time `json:"last_seen_at"`
 }
 
 type MarketSummary struct {
