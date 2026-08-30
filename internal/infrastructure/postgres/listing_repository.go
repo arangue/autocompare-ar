@@ -42,6 +42,27 @@ func (r *ListingRepository) ListByTrimYear(ctx context.Context, trimID, year, li
 	return listings, rows.Err()
 }
 
-func (r *ListingRepository) MarketSummary(_ context.Context, _, _ int) (domain.MarketSummary, error) {
-	return domain.MarketSummary{}, nil
+func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int) (domain.MarketSummary, error) {
+	var summary domain.MarketSummary
+	err := r.pool.QueryRow(ctx, `
+		SELECT
+			COUNT(*)::int,
+			MIN(price),
+			MAX(price),
+			(percentile_cont(0.25) WITHIN GROUP (ORDER BY price))::bigint,
+			(percentile_cont(0.5) WITHIN GROUP (ORDER BY price))::bigint,
+			(percentile_cont(0.75) WITHIN GROUP (ORDER BY price))::bigint
+		FROM vehicle_listings
+		WHERE trim_id = $1 AND year = $2 AND active = true`, trimID, year).Scan(
+		&summary.Count,
+		&summary.Minimum,
+		&summary.Maximum,
+		&summary.P25,
+		&summary.Median,
+		&summary.P75,
+	)
+	if err != nil {
+		return domain.MarketSummary{}, err
+	}
+	return summary, nil
 }

@@ -65,7 +65,8 @@ func main() {
 	searchTrims := application.NewSearchTrims(vehicleRepo)
 	getTrim := application.NewGetTrimService(vehicleRepo)
 	listListings := application.NewListListings(listingRepo)
-	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, listListings, pool)
+	getMarketSummary := application.NewGetMarketSummary(listingRepo)
+	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, listListings, getMarketSummary, pool)
 	router := httpdelivery.NewRouter(handler)
 
 	port := os.Getenv("PORT")

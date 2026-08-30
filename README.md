@@ -202,6 +202,54 @@ Active listings for a trim and year, ordered by price ascending. Default `limit`
 {"code":"INTERNAL_ERROR","message":"failed to list listings"}
 ```
 
+### `GET /api/v1/trims/{trim_id}/market?year=`
+
+Market price distribution from active listings for a trim and year.
+
+**200** — with listings
+
+```json
+{
+  "trim_id": 1,
+  "year": 2019,
+  "count": 10,
+  "median": 26000000,
+  "minimum": 22500000,
+  "maximum": 29000000,
+  "p25": 25200000,
+  "p75": 27100000,
+  "currency": "ARS"
+}
+```
+
+**200** — no listings (`count` 0, percentiles `null`)
+
+```json
+{
+  "trim_id": 1,
+  "year": 2019,
+  "count": 0,
+  "median": null,
+  "minimum": null,
+  "maximum": null,
+  "p25": null,
+  "p75": null,
+  "currency": "ARS"
+}
+```
+
+**400** — `year` missing or invalid
+
+```json
+{"code":"INVALID_YEAR","message":"year is required"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to get market summary"}
+```
+
 These are the implemented endpoints only. Target MVP API surface: [DESIGN.md](DESIGN.md) §8.
 
 ## Architecture (clean / hexagonal)
@@ -282,6 +330,7 @@ curl http://localhost:8080/api/v1/brands/2/models
 curl 'http://localhost:8080/api/v1/search/trims?q=corolla'
 curl 'http://localhost:8080/api/v1/trims/1?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
+curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 ```
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`

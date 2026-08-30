@@ -52,6 +52,24 @@ func (s stubListListings) Execute(context.Context, int, int, int) ([]domain.List
 	return s.listings, nil
 }
 
+type stubGetMarketSummary struct{}
+
+func (stubGetMarketSummary) Execute(context.Context, int, int) (domain.TrimMarketSummary, error) {
+	return domain.TrimMarketSummary{Currency: "ARS"}, nil
+}
+
+func newTestHandler() *Handler {
+	return NewHandler(
+		stubListBrands{},
+		stubListModels{},
+		stubSearchTrims{},
+		stubGetTrim{},
+		stubListListings{},
+		stubGetMarketSummary{},
+		stubPinger{},
+	)
+}
+
 func TestListBrands_snakeCaseJSON(t *testing.T) {
 	h := NewHandler(
 		stubListBrands{brands: []domain.Brand{{ID: 1, Name: "Toyota", CreatedAt: time.Unix(0, 0).UTC()}}},
@@ -59,6 +77,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 		stubSearchTrims{},
 		stubGetTrim{},
 		stubListListings{},
+		stubGetMarketSummary{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -81,7 +100,7 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 }
 
 func TestGetTrim_invalidYear(t *testing.T) {
-	h := NewHandler(stubListBrands{}, stubListModels{}, stubSearchTrims{}, stubGetTrim{}, stubListListings{}, stubPinger{})
+	h := newTestHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1?year=0", nil)
 	req.SetPathValue("trim_id", "1")
 	rec := httptest.NewRecorder()
@@ -106,6 +125,7 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubSearchTrims{},
 		stubGetTrim{err: domain.ErrNotFound},
 		stubListListings{},
+		stubGetMarketSummary{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
@@ -119,11 +139,30 @@ func TestGetTrim_notFound(t *testing.T) {
 }
 
 func TestListListings_missingYear(t *testing.T) {
-	h := NewHandler(stubListBrands{}, stubListModels{}, stubSearchTrims{}, stubGetTrim{}, stubListListings{}, stubPinger{})
+	h := newTestHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/listings", nil)
 	req.SetPathValue("trim_id", "1")
 	rec := httptest.NewRecorder()
 	h.ListListings(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_YEAR" {
+		t.Fatalf("code = %q", errBody.Code)
+	}
+}
+
+func TestGetMarketSummary_missingYear(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/market", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.GetMarketSummary(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())

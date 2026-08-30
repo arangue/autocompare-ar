@@ -24,3 +24,15 @@ type MarketSummary struct {
 	P25     *int64
 	P75     *int64
 }
+
+type TrimMarketSummary struct {
+	TrimID   int    `json:"trim_id"`
+	Year     int    `json:"year"`
+	Count    int    `json:"count"`
+	Median   *int64 `json:"median"`
+	Minimum  *int64 `json:"minimum"`
+	Maximum  *int64 `json:"maximum"`
+	P25      *int64 `json:"p25"`
+	P75      *int64 `json:"p75"`
+	Currency string `json:"currency"`
+}
