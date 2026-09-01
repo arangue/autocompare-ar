@@ -7,13 +7,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arangue/autocompare-ar/internal/application"
@@ -108,20 +104,4 @@ func main() {
 	}
 
 	slog.Info("server stopped")
-}
-
-func runMigrations(dbURL string) error {
-	migrateURL := strings.Replace(dbURL, "postgres://", "pgx5://", 1)
-	m, err := migrate.New("file://migrations", migrateURL)
-	if err != nil {
-		return err
-	}
-	defer m.Close() //nolint:errcheck
-
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
-	}
-
-	slog.Info("migrations applied")
-	return nil
 }

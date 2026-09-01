@@ -4,7 +4,7 @@ export
 DATABASE_URL ?= postgres://user:password@localhost:5435/autocompare_db?sslmode=disable
 INGEST_FILE ?= testdata/listings.json
 
-.PHONY: help dev db-up db-down api web ingest fmt tidy clean
+.PHONY: help dev db-up db-down api web ingest build fmt tidy clean
 
 help:
 	@echo "  make dev     -> start Postgres and run the API"
@@ -13,6 +13,7 @@ help:
 	@echo "  make api     -> run API (requires DATABASE_URL)"
 	@echo "  make web     -> run Next.js frontend"
 	@echo "  make ingest  -> upsert listings from INGEST_FILE (default testdata/listings.json)"
+	@echo "  make build   -> compile API binary to bin/server"
 	@echo "  make clean   -> remove containers and volumes"
 
 dev: db-up
@@ -33,6 +34,9 @@ web:
 
 ingest:
 	go run ./cmd/worker $(INGEST_FILE)
+
+build:
+	go build -o bin/server ./cmd/server
 
 fmt:
 	go fmt ./...
