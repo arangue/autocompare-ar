@@ -64,6 +64,29 @@
     }
     .pill.chore { background: #f4f4f5; color: #3f3f46; }
     .pill.spike { background: #fef9c3; color: var(--warn); }
+    .pill.backend { background: #dbeafe; color: #1e40af; }
+    .pill.frontend { background: #fce7f3; color: #9d174d; }
+    .pill.fullstack { background: #ede9fe; color: #5b21b6; }
+    .pill.docs { background: #e4e4e7; color: #3f3f46; }
+    .card[data-layer="backend"] { border-left: 4px solid #1d4ed8; }
+    .card[data-layer="frontend"] { border-left: 4px solid #be185d; }
+    .card[data-layer="fullstack"] { border-left: 4px solid #6d28d9; }
+    .card[data-layer="docs"] { border-left: 4px solid #71717a; }
+    .card.is-hidden { display: none; }
+    .filters {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+      margin: 0.75rem 0 0;
+    }
+    .filters button {
+      font: inherit; font-size: 0.8rem; font-weight: 600;
+      border: 1px solid var(--line); background: #fff; border-radius: 999px;
+      padding: 0.25rem 0.7rem; cursor: pointer;
+    }
+    .filters button.active { outline: 2px solid var(--accent); }
+    .filters button[data-filter="backend"].active { outline-color: #1d4ed8; background: #dbeafe; }
+    .filters button[data-filter="frontend"].active { outline-color: #be185d; background: #fce7f3; }
+    .filters button[data-filter="fullstack"].active { outline-color: #6d28d9; background: #ede9fe; }
+    .filters button[data-filter="docs"].active { outline-color: #52525b; background: #f4f4f5; }
     .card h3 { margin: 0 0 0.35rem; }
     .card h4 {
       margin: 1rem 0 0.35rem; font-size: 0.75rem;
@@ -108,6 +131,7 @@
       <a href="#s1">S1</a><a href="#s2">S2</a><a href="#s3">S3</a><a href="#s4">S4</a>
       <a href="#s5">S5</a><a href="#s6">S6</a><a href="#s7">S7</a><a href="#s8">S8</a>
       <a href="#icebox">Icebox</a>
+      <a href="#capas">FE / BE</a>
     </div>
   </nav>
   <main>
@@ -146,6 +170,22 @@ go test ./cmd/server/ -count=1</pre>
         <li>Un PR. No mezcles dos cards.</li>
         <li>README API solo si cambió un endpoint o su contrato.</li>
       </ul>
+
+      <h3>Capas (cómo se asigna)</h3>
+      <ul>
+        <li><strong>Backend:</strong> Go, SQL, worker, Docker de la API. Repo <code>cmd/</code>, <code>internal/</code>, <code>migrations/</code>.</li>
+        <li><strong>Frontend:</strong> Next/React en <code>web/</code>. No toca Go.</li>
+        <li><strong>Fullstack:</strong> mismo PR (o dos PRs seguidos) API + UI. Diseñala vos antes de partirla.</li>
+        <li><strong>Docs:</strong> markdown / spike legal. Cero código de producto.</li>
+      </ul>
+      <div class="filters" role="group" aria-label="Filtrar por capa">
+        <span class="muted">Ver:</span>
+        <button type="button" class="active" data-filter="all">Todas</button>
+        <button type="button" data-filter="backend">Backend</button>
+        <button type="button" data-filter="frontend">Frontend</button>
+        <button type="button" data-filter="fullstack">Fullstack</button>
+        <button type="button" data-filter="docs">Docs</button>
+      </div>
     </div>
 
     <h2 id="grafos">Grafos</h2>
@@ -153,12 +193,36 @@ go test ./cmd/server/ -count=1</pre>
     <div class="graph-panel"><h3>Dependencias entre epics</h3><div id="g-epics"></div></div>
     <div class="graph-panel"><h3>Sprints y cards</h3><div id="g-sprints"></div></div>
     <div class="graph-panel"><h3>Receta hex</h3><div id="g-hex"></div></div>
+    <p class="muted">En el grafo de sprints: azul = backend, rosa = frontend, violeta = fullstack, gris = docs.</p>
+
+    <h2 id="capas">Índice por capa</h2>
+    <table>
+      <thead><tr><th>Capa</th><th>Cards</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill backend">Backend</span></td>
+          <td>E1-101 · E2-201 · E2-202 · E2-203 · E2-204 · E3-301 · E3-302 · E3-303 · E4-401 · E4-402 · E4-403 · E4-404 · E5-502 · E6-602 · E8-801 · E8-802 · E9-903</td>
+        </tr>
+        <tr>
+          <td><span class="pill frontend">Frontend</span></td>
+          <td>E1-102 · E1-103 · E1-104 · E1-105 · E5-503 · E7-701 · E7-703 · E7-704 · E8-803 · E9-902</td>
+        </tr>
+        <tr>
+          <td><span class="pill fullstack">Fullstack</span></td>
+          <td>E6-601 (km API+chips) · E7-702 (compare año API+UI)</td>
+        </tr>
+        <tr>
+          <td><span class="pill docs">Docs</span></td>
+          <td>E1-106 · E5-501 · E5-504 · E9-901</td>
+        </tr>
+      </tbody>
+    </table>
 
     <h2 id="s1">Sprint 1 — Demo honesto (E1) · ~12 pts</h2>
-    <p>Meta: un extraño entiende el producto y el badge no miente con 1–4 publicaciones.</p>
+    <p>Meta: un extraño entiende el producto y el badge no miente con 1–4 publicaciones. Backend: 101. Frontend: 102–105. Docs: 106.</p>
 
-    <article class="card" id="e1-101">
-      <div class="meta"><span class="pill">E1-101</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e1-101" data-layer="backend">
+      <div class="meta"><span class="pill">E1-101</span><span class="pill backend">Backend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Umbral mínimo de 5 listings para el deal</h3>
       <h4>Glosario</h4>
       <ul>
@@ -243,8 +307,8 @@ func TestAssessDeal_minSampleIsOK(t *testing.T) {
       <p><code>handler.go</code>, SQL, <code>VehicleSheet.tsx</code>, <code>DealCalculator.tsx</code> (ya pintan <code>insufficient_data</code>).</p>
     </article>
 
-    <article class="card" id="e1-102">
-      <div class="meta"><span class="pill">E1-102</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e1-102" data-layer="frontend">
+      <div class="meta"><span class="pill">E1-102</span><span class="pill frontend">Frontend</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
       <h3>Disclaimer siempre visible en ficha y footer</h3>
       <h4>Glosario</h4>
       <p><strong>Footer:</strong> franja al pie de <em>todas</em> las páginas. En Next App Router va en <code>layout.tsx</code> para no copiarlo en cada page.</p>
@@ -294,8 +358,8 @@ func TestAssessDeal_minSampleIsOK(t *testing.T) {
       <p>Go, CSS global salvo clases Tailwind que ya usa el repo. No i18n, no modal, no cookies.</p>
     </article>
 
-    <article class="card" id="e1-103">
-      <div class="meta"><span class="pill">E1-103</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e1-103" data-layer="frontend">
+      <div class="meta"><span class="pill">E1-103</span><span class="pill frontend">Frontend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Atajos en el home</h3>
       <h4>Glosario</h4>
       <p><strong>Atajo:</strong> un <code>&lt;Link&gt;</code> a una ficha. No es un botón de search (eso pega a la API).</p>
@@ -340,8 +404,8 @@ func TestAssessDeal_minSampleIsOK(t *testing.T) {
       <p>Autocomplete, dropdown de marcas, analytics, Go.</p>
     </article>
 
-    <article class="card" id="e1-104">
-      <div class="meta"><span class="pill">E1-104</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e1-104" data-layer="frontend">
+      <div class="meta"><span class="pill">E1-104</span><span class="pill frontend">Frontend</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
       <h3>Empty states de specs y equipamiento</h3>
       <h4>Glosario</h4>
       <p><strong>Empty state:</strong> un bloque con título + texto cuando no hay datos. No un hueco (sección que no se renderiza).</p>
@@ -388,8 +452,8 @@ func TestAssessDeal_minSampleIsOK(t *testing.T) {
       <p>Skeletons, retry, Go, API.</p>
     </article>
 
-    <article class="card" id="e1-105">
-      <div class="meta"><span class="pill">E1-105</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
+    <article class="card" id="e1-105" data-layer="frontend">
+      <div class="meta"><span class="pill">E1-105</span><span class="pill frontend">Frontend</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
       <h3>Metadata / title por página</h3>
       <h4>Glosario</h4>
       <p><strong>Metadata:</strong> objeto que Next usa para <code>&lt;title&gt;</code> y <code>&lt;meta name="description"&gt;</code>. Se exporta como <code>export const metadata</code> en un Server Component (page o layout). <code>VehicleSheet</code> es <code>"use client"</code>: el title de la ficha va en <code>web/src/app/trims/[id]/page.tsx</code>, no en el client.</p>
@@ -428,8 +492,8 @@ export const metadata = { title: "Comparar | AutoCompare" };</pre>
       <p>OG images, sitemap, favicon.</p>
     </article>
 
-    <article class="card" id="e1-106">
-      <div class="meta"><span class="pill">E1-106</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
+    <article class="card" id="e1-106" data-layer="docs">
+      <div class="meta"><span class="pill">E1-106</span><span class="pill docs">Docs</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
       <h3>Checklist Railway (markdown)</h3>
       <h4>Glosario</h4>
       <p><strong>Reference variable:</strong> en Railway, <code>DATABASE_URL=${{Postgres.DATABASE_URL}}</code> copia la URL del plugin. El nombre <code>Postgres</code> tiene que ser el de la cajita.</p>
@@ -475,8 +539,8 @@ export const metadata = { title: "Comparar | AutoCompare" };</pre>
     <h2 id="s2">Sprint 2 — Identidad (E2) · ~15 pts</h2>
     <p>Meta: un listing sin <code>trim_id</code> numérico solo entra si el título matchea un alias conocido.</p>
 
-    <article class="card" id="e2-201">
-      <div class="meta"><span class="pill">E2-201</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e2-201" data-layer="backend">
+      <div class="meta"><span class="pill">E2-201</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Migración <code>trim_aliases</code></h3>
       <h4>Glosario</h4>
       <ul>
@@ -536,8 +600,8 @@ JOIN (VALUES
       <p>Worker, Go de application, embed. Resolver títulos = E2-203.</p>
     </article>
 
-    <article class="card" id="e2-202">
-      <div class="meta"><span class="pill">E2-202</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e2-202" data-layer="backend">
+      <div class="meta"><span class="pill">E2-202</span><span class="pill backend">Backend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Normalizer de títulos</h3>
       <h4>Glosario</h4>
       <p><strong>Normalizar:</strong> transformar “toyota  corolla   xei 2.0 cvt” en una clave estable, p.ej. <code>TOYOTA COROLLA XEI 2.0 CVT</code>. Mismo input sucio = mismo output.</p>
@@ -589,8 +653,8 @@ func Title(s string) string {
       <p>Handlers, worker, SQL.</p>
     </article>
 
-    <article class="card" id="e2-203">
-      <div class="meta"><span class="pill">E2-203</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e2-203" data-layer="backend">
+      <div class="meta"><span class="pill">E2-203</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Resolver <code>trim_id</code> desde <code>raw_title</code></h3>
       <h4>Glosario</h4>
       <p><strong>Resolve:</strong> given <code>source=file</code> + título crudo → <code>trim_id</code> o “no existe”. <strong>Skip:</strong> no insertar, log warn, el proceso sigue (exit 0). Hoy <code>toListing</code> exige <code>TrimID &gt; 0</code>.</p>
@@ -649,8 +713,8 @@ make ingest   # o go run ./cmd/worker testdata/tmp.json
       <p>Fuzzy/Levenshtein. Crear trims on the fly. Endpoints HTTP.</p>
     </article>
 
-    <article class="card" id="e2-204">
-      <div class="meta"><span class="pill">E2-204</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e2-204" data-layer="backend">
+      <div class="meta"><span class="pill">E2-204</span><span class="pill backend">Backend</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
       <h3>Tests de 15 variantes reales</h3>
       <h4>Glosario</h4>
       <p>Variante = string que un humano pegaría de un aviso. Se copian a mano a un test. No hay HTTP a ML.</p>
@@ -680,8 +744,8 @@ make ingest   # o go run ./cmd/worker testdata/tmp.json
     <h2 id="s3">Sprint 3 — Catálogo (E3) · ~19 pts</h2>
     <p>Más trims con specs. <strong>Cero listings seed nuevos</strong> (market vacío + empty state).</p>
 
-    <article class="card" id="e3-301">
-      <div class="meta"><span class="pill">E3-301</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e3-301" data-layer="backend">
+      <div class="meta"><span class="pill">E3-301</span><span class="pill backend">Backend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Validador de catálogo</h3>
       <h4>Glosario</h4>
       <p><strong>catalog-check:</strong> comando que falla (exit 1) si el seed está mal (años invertidos, nombres vacíos).</p>
@@ -710,8 +774,8 @@ make ingest   # o go run ./cmd/worker testdata/tmp.json
       <p>Catálogo nuevo (302). CI GitHub si no existe workflow — opcional, no blocker.</p>
     </article>
 
-    <article class="card" id="e3-302">
-      <div class="meta"><span class="pill">E3-302</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e3-302" data-layer="backend">
+      <div class="meta"><span class="pill">E3-302</span><span class="pill backend">Backend</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
       <h3>Completar Toyota (+8 trims)</h3>
       <h4>Glosario</h4>
       <p>Mirá <code>migrations/002_seed_catalog.up.sql</code> y <code>003_create_specs_features.up.sql</code>: así se insertan brand → model → generation → trim → specs → features. <strong>No</strong> insertes <code>vehicle_listings</code> (eso mentiría el mercado).</p>
@@ -739,8 +803,8 @@ make ingest   # o go run ./cmd/worker testdata/tmp.json
       <p>Listings, precios de guía, worker.</p>
     </article>
 
-    <article class="card" id="e3-303">
-      <div class="meta"><span class="pill">E3-303</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e3-303" data-layer="backend">
+      <div class="meta"><span class="pill">E3-303</span><span class="pill backend">Backend</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
       <h3>VW + Fiat de volumen</h3>
       <h4>Historia</h4>
       <p>Igual que 302 para Gol/Polo/Amarok y Toro o Pulse. Cronos ya existe: no lo dupliques.</p>
@@ -756,8 +820,8 @@ make ingest   # o go run ./cmd/worker testdata/tmp.json
 
     <h2 id="s4">Sprint 4 — Ingest operable (E4) · ~13 pts</h2>
 
-    <article class="card" id="e4-401">
-      <div class="meta"><span class="pill">E4-401</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e4-401" data-layer="backend">
+      <div class="meta"><span class="pill">E4-401</span><span class="pill backend">Backend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Dockerfile del worker</h3>
       <h4>Glosario</h4>
       <p>El <code>Dockerfile</code> de la raíz buildea <code>./cmd/server</code> y hace <code>CMD ["/server"]</code>. El worker no escucha HTTP: si Railway lo trata como web, healthcheck falla. Por eso <strong>otro</strong> archivo <code>Dockerfile.worker</code> y un servicio cron/one-off.</p>
@@ -787,8 +851,8 @@ CMD ["/worker"]</pre>
       <p>El Dockerfile de la API salvo que rompas el ignore. No levantes HTTP en el worker.</p>
     </article>
 
-    <article class="card" id="e4-402">
-      <div class="meta"><span class="pill">E4-402</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e4-402" data-layer="backend">
+      <div class="meta"><span class="pill">E4-402</span><span class="pill backend">Backend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Campos opcionales raw_title, active, observed_at</h3>
       <h4>Before</h4>
       <p><code>fileRow</code> tiene source, external_id, trim_id, year, km, price, currency, location, url. <code>toListing</code> falla sin trim_id.</p>
@@ -813,8 +877,8 @@ CMD ["/worker"]</pre>
       <p>Expire (403). Dockerfile.</p>
     </article>
 
-    <article class="card" id="e4-403">
-      <div class="meta"><span class="pill">E4-403</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e4-403" data-layer="backend">
+      <div class="meta"><span class="pill">E4-403</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Expire listings no vistos</h3>
       <h4>Glosario</h4>
       <p><code>ListByTrimYear</code> y <code>MarketSummary</code> ya filtran <code>active = true</code>. Expire = poner <code>active=false</code> si <code>last_seen_at</code> es viejo. No borres la fila.</p>
@@ -848,8 +912,8 @@ curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
       <p>UI. Historia de precios (E8).</p>
     </article>
 
-    <article class="card" id="e4-404">
-      <div class="meta"><span class="pill">E4-404</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e4-404" data-layer="backend">
+      <div class="meta"><span class="pill">E4-404</span><span class="pill backend">Backend</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
       <h3>Dry-run + JSON de títulos</h3>
       <h4>Before</h4>
       <p><code>testdata/listings.json</code> trae <code>trim_id</code>. <code>-dry-run</code> ya existe en el worker.</p>
@@ -868,8 +932,8 @@ curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
     <h2 id="s5">Sprint 5 — Fuentes (E5) · ~14 pts</h2>
     <p><strong>Gate:</strong> cero clientes HTTP a portales.</p>
 
-    <article class="card" id="e5-501">
-      <div class="meta"><span class="pill">E5-501</span><span class="pill">5 pts</span><span class="pill spike">Spike</span></div>
+    <article class="card" id="e5-501" data-layer="docs">
+      <div class="meta"><span class="pill">E5-501</span><span class="pill docs">Docs</span><span class="pill">5 pts</span><span class="pill spike">Spike</span></div>
       <h3>Legal <code>docs/SOURCES.md</code></h3>
       <h4>Glosario</h4>
       <p><strong>Spike:</strong> investigación con entregable escrito. Done = decisión, no código. Senior tiene que escribir “Accepted” en el PR.</p>
@@ -891,8 +955,8 @@ curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
       <p>Go, worker HTTP clients.</p>
     </article>
 
-    <article class="card" id="e5-502">
-      <div class="meta"><span class="pill">E5-502</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e5-502" data-layer="backend">
+      <div class="meta"><span class="pill">E5-502</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>No mezclar seed con live</h3>
       <h4>Glosario</h4>
       <p>Los 10 Corolla XEi 2019 son <code>source='seed'</code>. Si mañana hay <code>source='file'</code>, mezclarlos inventa un mercado.</p>
@@ -918,8 +982,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
       <p>UI badge (503). Borrar filas seed.</p>
     </article>
 
-    <article class="card" id="e5-503">
-      <div class="meta"><span class="pill">E5-503</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e5-503" data-layer="frontend">
+      <div class="meta"><span class="pill">E5-503</span><span class="pill frontend">Frontend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Badge de fuente en listings</h3>
       <h4>Before</h4>
       <p class="label-before">VehicleSheet.tsx lista de listings — precio, km, location. <code>listing.source</code> existe en el tipo y no se muestra.</p>
@@ -941,8 +1005,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
       <p>Go, exclude seed.</p>
     </article>
 
-    <article class="card" id="e5-504">
-      <div class="meta"><span class="pill">E5-504</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
+    <article class="card" id="e5-504" data-layer="docs">
+      <div class="meta"><span class="pill">E5-504</span><span class="pill docs">Docs</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
       <h3>Runbook: apagar seed en Railway</h3>
       <h4>After</h4>
       <p>En <code>docs/runbooks/railway.md</code>: “Cuando Corolla 2019 tenga ≥5 listings no-seed, setear <code>MARKET_EXCLUDE_SEED=true</code> en la API y Redeploy. No el día 1.”</p>
@@ -955,8 +1019,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 
     <h2 id="s6">Sprint 6 — km + compare · ~16 pts</h2>
 
-    <article class="card" id="e6-601">
-      <div class="meta"><span class="pill">E6-601</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e6-601" data-layer="fullstack">
+      <div class="meta"><span class="pill">E6-601</span><span class="pill fullstack">Fullstack</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
       <h3>Filtro km_min / km_max</h3>
       <h4>Glosario</h4>
       <p>Un XEi 40k km no es comparable a uno de 180k. El filtro tiene que ser el <strong>mismo</strong> en listings, market y deal. Si no, el badge miente.</p>
@@ -992,8 +1056,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019&amp;km_min=80000&amp
       <p>Regresión precio~km. Fallback ±1 año (602).</p>
     </article>
 
-    <article class="card" id="e7-701">
-      <div class="meta"><span class="pill">E7-701</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e7-701" data-layer="frontend">
+      <div class="meta"><span class="pill">E7-701</span><span class="pill frontend">Frontend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Comparar desde el search</h3>
       <h4>Glosario</h4>
       <p>Hoy “Comparar” vive en VehicleSheet y usa <code>sessionStorage</code> key <code>compare_trim_ids</code>. El home no suma trims.</p>
@@ -1020,8 +1084,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019&amp;km_min=80000&amp
       <p>API compare. Año edge (702) salvo el year del link.</p>
     </article>
 
-    <article class="card" id="e7-702">
-      <div class="meta"><span class="pill">E7-702</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e7-702" data-layer="fullstack">
+      <div class="meta"><span class="pill">E7-702</span><span class="pill fullstack">Fullstack</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Compare: trim fuera de año</h3>
       <h4>Historia</h4>
       <p>XEi E210 es 2019–2026. <code>/compare?trim_ids=1,2&amp;year=2014</code> no debe 404 todo el compare.</p>
@@ -1043,8 +1107,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019&amp;km_min=80000&amp
 
     <h2 id="s7">Sprint 7 — Fallback + ficha · ~13 pts</h2>
 
-    <article class="card" id="e6-602">
-      <div class="meta"><span class="pill">E6-602</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e6-602" data-layer="backend">
+      <div class="meta"><span class="pill">E6-602</span><span class="pill backend">Backend</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
       <h3>Fallback trim ±1 año</h3>
       <h4>Glosario</h4>
       <p>Si el año exacto tiene &lt; 5 listings (E1-101), unís listings del mismo <code>trim_id</code> en year-1 y year+1. Disclaimer distinto. No hagas mediana ponderada (otra card de 13 pts).</p>
@@ -1077,8 +1141,8 @@ func TestAssessDeal_noFallbackWhenExactEnough(t *testing.T) {
       <p>Peso 0.7 mismo modelo / 0.4 segmento. km filter salvo componer ambos (si 601 existe, aplicá km también a vecinos).</p>
     </article>
 
-    <article class="card" id="e7-703">
-      <div class="meta"><span class="pill">E7-703</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e7-703" data-layer="frontend">
+      <div class="meta"><span class="pill">E7-703</span><span class="pill frontend">Frontend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Secciones Seguridad / Motor / Frenos</h3>
       <h4>Glosario</h4>
       <p><code>groupFeaturesByCategory</code> ya agrupa por <code>feature.category</code> (en seed: <code>safety</code>, etc.). Hoy el heading es el string crudo de category.</p>
@@ -1104,8 +1168,8 @@ const CATEGORY_ES: Record&lt;string, string&gt; = {
       <p>API, seed de features salvo que un category esté mal escrito (entonces migración chica, preguntá al PO).</p>
     </article>
 
-    <article class="card" id="e7-704">
-      <div class="meta"><span class="pill">E7-704</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e7-704" data-layer="frontend">
+      <div class="meta"><span class="pill">E7-704</span><span class="pill frontend">Frontend</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
       <h3>Deep link compare siempre</h3>
       <h4>Historia</h4>
       <p>Quiero copiar <code>/compare?trim_ids=1,2&amp;year=2019</code> y que un amigo vea lo mismo. sessionStorage solo junta IDs mientras navego.</p>
@@ -1124,8 +1188,8 @@ const CATEGORY_ES: Record&lt;string, string&gt; = {
 
     <h2 id="s8">Sprint 8 — Historia + operar · ~21 pts</h2>
 
-    <article class="card" id="e8-801">
-      <div class="meta"><span class="pill">E8-801</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e8-801" data-layer="backend">
+      <div class="meta"><span class="pill">E8-801</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Tabla <code>listing_price_observations</code></h3>
       <h4>Glosario</h4>
       <p>Hoy <code>Upsert</code> pisa <code>price</code> en la misma fila. Perdés el precio anterior. Observación = fila histórica (listing_id, price, observed_at).</p>
@@ -1155,8 +1219,8 @@ const CATEGORY_ES: Record&lt;string, string&gt; = {
       <p>HTTP history (802). UI.</p>
     </article>
 
-    <article class="card" id="e8-802">
-      <div class="meta"><span class="pill">E8-802</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e8-802" data-layer="backend">
+      <div class="meta"><span class="pill">E8-802</span><span class="pill backend">Backend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3><code>GET /api/v1/trims/{id}/market/history</code></h3>
       <h4>Glosario</h4>
       <p>Agregación semanal: para cada semana, count y mediana de observaciones (o de listings vigentes — documentá cuál). Flag <code>HISTORY_ENABLED</code>: si false, 404. Local default true; prod false hasta tener datos.</p>
@@ -1178,8 +1242,8 @@ GET ...?year=2019&amp;from=2026-01-01&amp;to=2026-03-01
       <p>Gráficos. Sparkline (803).</p>
     </article>
 
-    <article class="card" id="e8-803">
-      <div class="meta"><span class="pill">E8-803</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e8-803" data-layer="frontend">
+      <div class="meta"><span class="pill">E8-803</span><span class="pill frontend">Frontend</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
       <h3>Tabla 8 semanas en la ficha</h3>
       <h4>Before</h4>
       <p>VehicleSheet no llama history. <code>api.ts</code> no tiene helper.</p>
@@ -1196,8 +1260,8 @@ GET ...?year=2019&amp;from=2026-01-01&amp;to=2026-03-01
       <p>Chart.js / Recharts. Billing premium.</p>
     </article>
 
-    <article class="card" id="e9-901">
-      <div class="meta"><span class="pill">E9-901</span><span class="pill">2 pts</span><span class="pill chore">Chore</span></div>
+    <article class="card" id="e9-901" data-layer="docs">
+      <div class="meta"><span class="pill">E9-901</span><span class="pill docs">Docs</span><span class="pill">2 pts</span><span class="pill chore">Chore</span></div>
       <h3>Uptime + custom domain runbook</h3>
       <h4>After</h4>
       <p>En <code>docs/runbooks/railway.md</code>: ping a web <code>/</code> y API <code>/health</code> (Healthchecks.io / Better Uptime). CNAME del dominio al servicio <strong>web</strong>. El browser no necesita ver la API si el rewrite existe. No implementes el CNAME vos salvo que el PO tenga el DNS.</p>
@@ -1207,8 +1271,8 @@ GET ...?year=2019&amp;from=2026-01-01&amp;to=2026-03-01
       <p>Go, Next, DNS prod sin OK del PO.</p>
     </article>
 
-    <article class="card" id="e9-902">
-      <div class="meta"><span class="pill">E9-902</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+    <article class="card" id="e9-902" data-layer="frontend">
+      <div class="meta"><span class="pill">E9-902</span><span class="pill frontend">Frontend</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
       <h3>Analytics mínimo</h3>
       <h4>Glosario</h4>
       <p><strong>PII:</strong> email, IP a propósito, precio tipeado con DNI, etc. No lo mandes. Eventos: nombre + trim_id + year alcanza.</p>
@@ -1226,8 +1290,8 @@ export function track(event: string, props?: Record&lt;string, string | number&g
       <p>Google Analytics pesado si el PO no lo pidió. Cookies banner.</p>
     </article>
 
-    <article class="card" id="e9-903">
-      <div class="meta"><span class="pill">E9-903</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
+    <article class="card" id="e9-903" data-layer="backend">
+      <div class="meta"><span class="pill">E9-903</span><span class="pill backend">Backend</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
       <h3><code>DB_MAX_CONNS</code> configurable</h3>
       <h4>Before</h4>
       <p class="label-before">cmd/server/main.go</p>
@@ -1335,72 +1399,72 @@ poolCfg.MaxConns = maxConns</pre>
           subgraph cluster_s1 {
             label="Sprint 1 · E1 Honest · 12 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e1101 [label="E1-101 N=5 (3)", URL="#e1-101", fillcolor="#ecfdf5", color="#047857"];
-            e1102 [label="E1-102 disclaimer (2)", URL="#e1-102"];
-            e1103 [label="E1-103 home (3)", URL="#e1-103"];
-            e1104 [label="E1-104 empty (2)", URL="#e1-104"];
-            e1105 [label="E1-105 meta (1)", URL="#e1-105"];
-            e1106 [label="E1-106 railway (1)", URL="#e1-106"];
+            e1101 [label="E1-101 N=5 BE", URL="#e1-101", fillcolor="#dbeafe", color="#1d4ed8"];
+            e1102 [label="E1-102 disclaimer FE", URL="#e1-102", fillcolor="#fce7f3", color="#be185d"];
+            e1103 [label="E1-103 home FE", URL="#e1-103", fillcolor="#fce7f3", color="#be185d"];
+            e1104 [label="E1-104 empty FE", URL="#e1-104", fillcolor="#fce7f3", color="#be185d"];
+            e1105 [label="E1-105 meta FE", URL="#e1-105", fillcolor="#fce7f3", color="#be185d"];
+            e1106 [label="E1-106 railway Docs", URL="#e1-106", fillcolor="#f4f4f5", color="#52525b"];
           }
           subgraph cluster_s2 {
             label="Sprint 2 · E2 Identity · 15 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e2201 [label="E2-201 aliases (5)", URL="#e2-201", fillcolor="#ecfdf5", color="#047857"];
-            e2202 [label="E2-202 normalize (3)", URL="#e2-202"];
-            e2203 [label="E2-203 resolve (5)", URL="#e2-203"];
-            e2204 [label="E2-204 variants (2)", URL="#e2-204"];
+            e2201 [label="E2-201 aliases BE", URL="#e2-201", fillcolor="#dbeafe", color="#1d4ed8"];
+            e2202 [label="E2-202 normalize BE", URL="#e2-202", fillcolor="#dbeafe", color="#1d4ed8"];
+            e2203 [label="E2-203 resolve BE", URL="#e2-203", fillcolor="#dbeafe", color="#1d4ed8"];
+            e2204 [label="E2-204 variants BE", URL="#e2-204", fillcolor="#dbeafe", color="#1d4ed8"];
             e2201 -> e2202 -> e2203 -> e2204;
           }
           subgraph cluster_s3 {
             label="Sprint 3 · E3 Catalog · 19 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e3301 [label="E3-301 check (3)", URL="#e3-301"];
-            e3302 [label="E3-302 Toyota (8)", URL="#e3-302"];
-            e3303 [label="E3-303 VW+Fiat (8)", URL="#e3-303"];
+            e3301 [label="E3-301 check BE", URL="#e3-301", fillcolor="#dbeafe", color="#1d4ed8"];
+            e3302 [label="E3-302 Toyota BE", URL="#e3-302", fillcolor="#dbeafe", color="#1d4ed8"];
+            e3303 [label="E3-303 VW+Fiat BE", URL="#e3-303", fillcolor="#dbeafe", color="#1d4ed8"];
             e3301 -> e3302 -> e3303;
           }
           subgraph cluster_s4 {
             label="Sprint 4 · E4 Ingest · 13 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e4401 [label="E4-401 Dockerfile (3)", URL="#e4-401"];
-            e4402 [label="E4-402 fields (3)", URL="#e4-402"];
-            e4403 [label="E4-403 expire (5)", URL="#e4-403"];
-            e4404 [label="E4-404 dry-run (2)", URL="#e4-404"];
+            e4401 [label="E4-401 Dockerfile BE", URL="#e4-401", fillcolor="#dbeafe", color="#1d4ed8"];
+            e4402 [label="E4-402 fields BE", URL="#e4-402", fillcolor="#dbeafe", color="#1d4ed8"];
+            e4403 [label="E4-403 expire BE", URL="#e4-403", fillcolor="#dbeafe", color="#1d4ed8"];
+            e4404 [label="E4-404 dry-run BE", URL="#e4-404", fillcolor="#dbeafe", color="#1d4ed8"];
             e2203 -> e4402;
             e4402 -> e4403;
           }
           subgraph cluster_s5 {
             label="Sprint 5 · E5 Policy · 14 pts";
             style="rounded,filled"; fillcolor="#fefce8"; color="#eab308";
-            e5501 [label="E5-501 legal (5)", URL="#e5-501", fillcolor="#fef9c3", color="#a16207"];
-            e5502 [label="E5-502 exclude seed (5)", URL="#e5-502"];
-            e5503 [label="E5-503 badge (3)", URL="#e5-503"];
-            e5504 [label="E5-504 runbook (1)", URL="#e5-504"];
+            e5501 [label="E5-501 legal Docs", URL="#e5-501", fillcolor="#f4f4f5", color="#52525b"];
+            e5502 [label="E5-502 exclude seed BE", URL="#e5-502", fillcolor="#dbeafe", color="#1d4ed8"];
+            e5503 [label="E5-503 badge FE", URL="#e5-503", fillcolor="#fce7f3", color="#be185d"];
+            e5504 [label="E5-504 runbook Docs", URL="#e5-504", fillcolor="#f4f4f5", color="#52525b"];
           }
           subgraph cluster_s6 {
             label="Sprint 6 · km + compare · 16 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e6601 [label="E6-601 km filter (8)", URL="#e6-601"];
-            e7701 [label="E7-701 compare search (5)", URL="#e7-701"];
-            e7702 [label="E7-702 year edge (3)", URL="#e7-702"];
+            e6601 [label="E6-601 km FS", URL="#e6-601", fillcolor="#ede9fe", color="#6d28d9"];
+            e7701 [label="E7-701 compare search FE", URL="#e7-701", fillcolor="#fce7f3", color="#be185d"];
+            e7702 [label="E7-702 year edge FS", URL="#e7-702", fillcolor="#ede9fe", color="#6d28d9"];
           }
           subgraph cluster_s7 {
             label="Sprint 7 · fallback + ficha · 13 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e6602 [label="E6-602 ±1 year (8)", URL="#e6-602"];
-            e7703 [label="E7-703 sections (3)", URL="#e7-703"];
-            e7704 [label="E7-704 deeplink (2)", URL="#e7-704"];
+            e6602 [label="E6-602 ±1 year BE", URL="#e6-602", fillcolor="#dbeafe", color="#1d4ed8"];
+            e7703 [label="E7-703 sections FE", URL="#e7-703", fillcolor="#fce7f3", color="#be185d"];
+            e7704 [label="E7-704 deeplink FE", URL="#e7-704", fillcolor="#fce7f3", color="#be185d"];
             e1101 -> e6602;
           }
           subgraph cluster_s8 {
             label="Sprint 8 · history + operate · 21 pts";
             style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
-            e8801 [label="E8-801 observations (5)", URL="#e8-801"];
-            e8802 [label="E8-802 history API (5)", URL="#e8-802"];
-            e8803 [label="E8-803 table UI (5)", URL="#e8-803"];
-            e9901 [label="E9-901 domain (2)", URL="#e9-901"];
-            e9902 [label="E9-902 analytics (3)", URL="#e9-902"];
-            e9903 [label="E9-903 maxconns (1)", URL="#e9-903"];
+            e8801 [label="E8-801 observations BE", URL="#e8-801", fillcolor="#dbeafe", color="#1d4ed8"];
+            e8802 [label="E8-802 history API BE", URL="#e8-802", fillcolor="#dbeafe", color="#1d4ed8"];
+            e8803 [label="E8-803 table UI FE", URL="#e8-803", fillcolor="#fce7f3", color="#be185d"];
+            e9901 [label="E9-901 domain Docs", URL="#e9-901", fillcolor="#f4f4f5", color="#52525b"];
+            e9902 [label="E9-902 analytics FE", URL="#e9-902", fillcolor="#fce7f3", color="#be185d"];
+            e9903 [label="E9-903 maxconns BE", URL="#e9-903", fillcolor="#dbeafe", color="#1d4ed8"];
             e8801 -> e8802 -> e8803;
           }
         }`,
@@ -1429,6 +1493,19 @@ poolCfg.MaxConns = maxConns</pre>
         el.innerHTML = `<p class="graph-error">Graphviz: ${String(err)}</p>`;
       }
     }
+  </script>
+  <script>
+    document.querySelectorAll(".filters button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-filter");
+        document.querySelectorAll(".filters button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll("article.card").forEach((card) => {
+          const layer = card.getAttribute("data-layer");
+          card.classList.toggle("is-hidden", filter !== "all" && layer !== filter);
+        });
+      });
+    });
   </script>
 </body>
 </html>
