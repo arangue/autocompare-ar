@@ -295,7 +295,7 @@ Guide and fiscal reference prices (CCA, ACARA, DNRPA) for a trim and year. DNRPA
 
 ### `GET /api/v1/trims/{trim_id}/deal?year=&price=`
 
-Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”.
+Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”. `ok` requiere al menos 5 publicaciones activas; si no, `insufficient_data`.
 
 **200** — enough listings
 

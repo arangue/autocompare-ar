@@ -121,3 +121,36 @@ func TestAssessDeal_fallbackWithoutPercentiles(t *testing.T) {
 		t.Fatalf("band = %q", got.Band)
 	}
 }
+
+func TestAssessDeal_countBelowMinIsInsufficient(t *testing.T) {
+	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{
+		Count:  4,
+		Median: int64Ptr(26_000_000),
+	}})
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.DealStatusInsufficientData {
+		t.Fatalf("status = %q", got.Status)
+	}
+	if got.DeltaARS != nil || got.DeltaPct != nil {
+		t.Fatalf("deltas must be nil")
+	}
+}
+
+func TestAssessDeal_minSampleIsOK(t *testing.T) {
+	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{
+		Count:  5,
+		Median: int64Ptr(26_000_000),
+		P25:    int64Ptr(25_200_000),
+		P75:    int64Ptr(27_100_000),
+	}})
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.DealStatusOK {
+		t.Fatalf("status = %q", got.Status)
+	}
+}

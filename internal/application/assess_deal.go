@@ -28,7 +28,7 @@ func (u *AssessDeal) Execute(ctx context.Context, trimID, year int, price int64)
 		P75:    summary.P75,
 	}
 
-	if summary.Count == 0 || summary.Median == nil {
+	if summary.Count < domain.DealMinSampleSize || summary.Median == nil {
 		return domain.DealAssessment{
 			TrimID:     trimID,
 			Year:       year,

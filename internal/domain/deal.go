@@ -1,6 +1,10 @@
 package domain
 
 const (
+	DealMinSampleSize = 5
+
+	DealStatusUnknown          = "unknown"
+	DealStatusUnavailable      = "unavailable"
 	DealStatusOK               = "ok"
 	DealStatusInsufficientData = "insufficient_data"
 
@@ -9,7 +13,7 @@ const (
 	DealBandAbove            = "above"
 	DealBandInsufficientData = "insufficient_data"
 
-	DealDisclaimerOK = "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta."
+	DealDisclaimerOK               = "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta."
 	DealDisclaimerInsufficientData = "No hay publicaciones suficientes para estimar el mercado de esta versión/año."
 )
 
