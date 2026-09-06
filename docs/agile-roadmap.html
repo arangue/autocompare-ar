@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AutoCompare AR — Agile roadmap junior</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --ink: #18181b;
+      --muted: #52525b;
+      --line: #e4e4e7;
+      --card: #fff;
+      --accent: #047857;
+      --accent-soft: #ecfdf5;
+      --warn: #854d0e;
+      --danger: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header { background: #18181b; color: #fafafa; padding: 2.5rem 1.5rem 2rem; }
+    header .wrap, main, footer { max-width: 54rem; margin: 0 auto; }
+    header h1 { margin: 0 0 0.5rem; font-size: 1.85rem; letter-spacing: -0.03em; }
+    header p { margin: 0; color: #a1a1aa; max-width: 42rem; }
+    nav.toc {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 2;
+    }
+    nav.toc .wrap {
+      max-width: 54rem; margin: 0 auto; padding: 0.7rem 1.5rem;
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.85rem;
+    }
+    nav.toc a { color: var(--accent); text-decoration: none; }
+    nav.toc a:hover { text-decoration: underline; }
+    main { padding: 1.5rem 1.5rem 4rem; }
+    h2 { margin-top: 2.5rem; font-size: 1.4rem; letter-spacing: -0.02em; }
+    h3 { margin-top: 1.5rem; font-size: 1.1rem; }
+    .muted { color: var(--muted); }
+    .appendix, .card, .graph-panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem 1.15rem 1.15rem;
+      margin: 1rem 0;
+    }
+    .appendix { background: #fffbeb; border-color: #fde68a; }
+    .graph-panel { overflow-x: auto; }
+    .graph-panel h3 { margin: 0 0 0.75rem; }
+    .graph-panel svg { max-width: 100%; height: auto; display: block; }
+    .graph-error { color: var(--danger); font-size: 0.9rem; }
+    .card:target { outline: 2px solid var(--accent); }
+    .meta { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.75rem; }
+    .pill {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+      padding: 0.15rem 0.45rem; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+    }
+    .pill.chore { background: #f4f4f5; color: #3f3f46; }
+    .pill.spike { background: #fef9c3; color: var(--warn); }
+    .card h3 { margin: 0 0 0.35rem; }
+    .card h4 {
+      margin: 1rem 0 0.35rem; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    }
+    .card ol, .card ul, .appendix ol, .appendix ul { margin: 0.25rem 0 0; padding-left: 1.2rem; }
+    code, pre {
+      font: 0.84em/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    p code, li code, td code {
+      background: #f4f4f5; padding: 0.05em 0.3em; border-radius: 4px;
+    }
+    pre {
+      background: #18181b; color: #e4e4e7; padding: 0.75rem 0.9rem;
+      border-radius: 8px; overflow-x: auto; font-size: 0.78rem;
+    }
+    .label-before { color: #a1a1aa; font-size: 0.75rem; margin: 0.4rem 0 0.2rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+    th, td { border: 1px solid var(--line); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; }
+    th { background: #f4f4f5; }
+    .exit {
+      background: var(--accent-soft);
+      border-left: 3px solid var(--accent);
+      padding: 0.65rem 0.85rem; margin: 1rem 0;
+    }
+    footer { padding: 1.5rem; color: var(--muted); font-size: 0.85rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p style="color:#a1a1aa;margin-bottom:0.4rem">AutoCompare AR · post-MVP · cards para juniors</p>
+      <h1>Agile roadmap — sprints de 10 días</h1>
+      <p>Leé primero el apéndice. Cada card es un mini-tutorial: no codees el producto hasta que el PO asigne la story. Este HTML no implementa E1-101 ni nada de Go/React.</p>
+    </div>
+  </header>
+  <nav class="toc">
+    <div class="wrap">
+      <a href="#apendice">Apéndice</a>
+      <a href="#grafos">Grafos</a>
+      <a href="#s1">S1</a><a href="#s2">S2</a><a href="#s3">S3</a><a href="#s4">S4</a>
+      <a href="#s5">S5</a><a href="#s6">S6</a><a href="#s7">S7</a><a href="#s8">S8</a>
+      <a href="#icebox">Icebox</a>
+    </div>
+  </nav>
+  <main>
+
+    <h2 id="apendice">Apéndice — leé esto antes de cualquier card</h2>
+    <div class="appendix">
+      <h3 style="margin-top:0">Hex en una frase</h3>
+      <p>El handler HTTP solo parsea la request y llama un <strong>use case</strong> en <code>internal/application/</code>; el use case usa un <strong>port</strong> (interfaz en <code>internal/domain/ports.go</code>); Postgres implementa el port en <code>internal/infrastructure/postgres/</code>; <code>cmd/server/main.go</code> conecta las piezas. SQL no va en handlers. HTTP no va en domain.</p>
+
+      <h3>Cómo correr local</h3>
+      <pre>cp .env.example .env          # opcional; make ya tiene defaults
+make db-up                    # Postgres Docker en :5435
+make api                      # Go API en :8080  (otra terminal: make web → Next :3000)
+curl http://localhost:8080/health
+# esperá {"status":"ok"} — si DATABASE_URL falta, el proceso muere</pre>
+      <p>Frontend: <code>cd web && npm install && cd .. && make web</code> → <a href="http://localhost:3000">http://localhost:3000</a>. El browser pega a <code>/api/...</code> y Next reescribe a <code>localhost:8080</code>.</p>
+      <p>Tests rápidos (no corras <code>go test ./...</code> si no hace falta: entra a <code>web/node_modules</code>):</p>
+      <pre>go test ./internal/application/ -count=1
+go test ./cmd/server/ -count=1</pre>
+
+      <h3>Palabras que aparecen en todas las cards</h3>
+      <ul>
+        <li><strong>Trim:</strong> una versión de auto (Corolla XEi 2.0 CVT). No es un aviso.</li>
+        <li><strong>Listing:</strong> un aviso concreto (precio, km, año) en <code>vehicle_listings</code>.</li>
+        <li><strong>Seed:</strong> datos de demostración metidos por migraciones SQL, <code>source='seed'</code>.</li>
+        <li><strong>Deal:</strong> “¿está barato este precio?” → <code>GET /api/v1/trims/{id}/deal?year=&amp;price=</code>.</li>
+        <li><strong>Migración:</strong> archivo <code>migrations/00N_algo.up.sql</code>. El server las corre al arrancar. <code>migrations/fs.go</code> ya hace <code>//go:embed *.sql</code>: si el archivo termina en <code>.sql</code>, entra solo.</li>
+        <li><strong>Worker:</strong> programa CLI <code>cmd/worker</code> que inserta listings. No es HTTP. <code>make ingest</code>.</li>
+        <li><strong>Domain web vs API:</strong> en Railway hay dos URLs. La portada es el servicio <code>web/</code>. <code>/health</code> es la API.</li>
+      </ul>
+
+      <h3>DoD global de toda story de código</h3>
+      <ul>
+        <li><code>go test</code> del paquete que tocaste, verde.</li>
+        <li>Si tocaste <code>web/</code>: <code>cd web && npm run lint</code>.</li>
+        <li>Un PR. No mezcles dos cards.</li>
+        <li>README API solo si cambió un endpoint o su contrato.</li>
+      </ul>
+    </div>
+
+    <h2 id="grafos">Grafos</h2>
+    <p class="muted">Click en un nodo para saltar a la card. Graphviz WASM (<code>@viz-js/viz</code>), hace falta red la primera vez.</p>
+    <div class="graph-panel"><h3>Dependencias entre epics</h3><div id="g-epics"></div></div>
+    <div class="graph-panel"><h3>Sprints y cards</h3><div id="g-sprints"></div></div>
+    <div class="graph-panel"><h3>Receta hex</h3><div id="g-hex"></div></div>
+
+    <h2 id="s1">Sprint 1 — Demo honesto (E1) · ~12 pts</h2>
+    <p>Meta: un extraño entiende el producto y el badge no miente con 1–4 publicaciones.</p>
+
+    <article class="card" id="e1-101">
+      <div class="meta"><span class="pill">E1-101</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Umbral mínimo de 5 listings para el deal</h3>
+      <h4>Glosario</h4>
+      <ul>
+        <li><strong>Use case:</strong> <code>AssessDeal.Execute</code> — la regla de negocio. El handler solo lee <code>year</code> y <code>price</code> de la URL.</li>
+        <li><strong>Mediana:</strong> precio del medio. Con 1 listing, la mediana <em>es</em> ese precio: “15% below” no significa nada.</li>
+        <li><strong>Fake repo:</strong> en el test, un struct que implementa el port y devuelve el <code>Count</code> que vos pongas. No usa Postgres.</li>
+      </ul>
+      <h4>Historia</h4>
+      <p>Como comprador, no quiero un badge verde si hay menos de 5 publicaciones, para no creer un descuento inventado.</p>
+      <h4>Before</h4>
+      <p class="label-before">internal/application/assess_deal.go (~31)</p>
+      <pre>if summary.Count == 0 || summary.Median == nil {
+    return ... Status: insufficient_data
+}</pre>
+      <p>1 listing + mediana → <code>status=ok</code>, <code>band=below/near/above</code>. Mentira. El seed de Corolla XEi 2019 tiene 10 filas: <code>curl</code> al API local <em>no</em> prueba el umbral 5. Por eso el test usa el fake.</p>
+      <h4>After</h4>
+      <pre>if summary.Count &lt; domain.DealMinSampleSize || summary.Median == nil {</pre>
+      <h4>Mapa de archivos</h4>
+      <table>
+        <tr><th>Archivo</th><th>Para qué</th></tr>
+        <tr><td><code>internal/domain/deal.go</code></td><td>Constante <code>DealMinSampleSize = 5</code> junto a las otras const</td></tr>
+        <tr><td><code>internal/application/assess_deal.go</code></td><td>El <code>if</code></td></tr>
+        <tr><td><code>internal/application/assess_deal_test.go</code></td><td>Tests. <code>fakeListingRepo</code> y <code>int64Ptr</code> ya existen</td></tr>
+        <tr><td><code>README.md</code></td><td>Una frase en el bloque <code>/deal</code></td></tr>
+      </table>
+      <h4>Pasos</h4>
+      <ol>
+        <li>En <code>deal.go</code>, dentro del bloque <code>const (</code>, agregá <code>DealMinSampleSize = 5</code>.</li>
+        <li>En <code>assess_deal.go</code> cambiá <strong>solo</strong> el <code>if</code> (no toques <code>classifyDealBand</code>).</li>
+        <li>Pegá el test de abajo al final de <code>assess_deal_test.go</code>.</li>
+        <li><code>go test ./internal/application/ -count=1</code></li>
+        <li>README: “<code>ok</code> requiere al menos 5 publicaciones activas; si no, <code>insufficient_data</code>.”</li>
+      </ol>
+      <h4>Test copy-paste</h4>
+      <pre>func TestAssessDeal_countBelowMinIsInsufficient(t *testing.T) {
+	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{
+		Count:  4,
+		Median: int64Ptr(26_000_000),
+	}})
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.DealStatusInsufficientData {
+		t.Fatalf("status = %q", got.Status)
+	}
+	if got.DeltaARS != nil || got.DeltaPct != nil {
+		t.Fatalf("deltas must be nil")
+	}
+}
+
+func TestAssessDeal_minSampleIsOK(t *testing.T) {
+	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{
+		Count:  5,
+		Median: int64Ptr(26_000_000),
+		P25:    int64Ptr(25_200_000),
+		P75:    int64Ptr(27_100_000),
+	}})
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != domain.DealStatusOK {
+		t.Fatalf("status = %q", got.Status)
+	}
+}</pre>
+      <h4>Verificación manual</h4>
+      <p>No hay forma fácil de dejar el seed en 4 filas. Confiá en el unit test. Opcional: no hace falta curl.</p>
+      <h4>DoD</h4>
+      <ul>
+        <li><code>DealMinSampleSize == 5</code></li>
+        <li>Count 4 + mediana → insufficient; count 5 → ok</li>
+        <li><code>go test ./internal/application/</code> verde</li>
+        <li>Diff solo esos 3–4 archivos</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <ul>
+        <li><code>undefined: DealMinSampleSize</code> → usá <code>domain.DealMinSampleSize</code>.</li>
+        <li><code>TestAssessDeal_insufficientData</code> (count 0) tiene que seguir pasando. No lo borres.</li>
+      </ul>
+      <h4>No toques</h4>
+      <p><code>handler.go</code>, SQL, <code>VehicleSheet.tsx</code>, <code>DealCalculator.tsx</code> (ya pintan <code>insufficient_data</code>).</p>
+    </article>
+
+    <article class="card" id="e1-102">
+      <div class="meta"><span class="pill">E1-102</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+      <h3>Disclaimer siempre visible en ficha y footer</h3>
+      <h4>Glosario</h4>
+      <p><strong>Footer:</strong> franja al pie de <em>todas</em> las páginas. En Next App Router va en <code>layout.tsx</code> para no copiarlo en cada page.</p>
+      <h4>Historia</h4>
+      <p>Como visitante, quiero ver que esto es una estimación y un catálogo de demo, sin tener que abrir el badge verde.</p>
+      <h4>Before</h4>
+      <p class="label-before">web/src/app/layout.tsx — el body solo envuelve children, no hay footer</p>
+      <pre>&lt;body className="flex min-h-full flex-col ..."&gt;
+  {children}
+&lt;/body&gt;</pre>
+      <p>El disclaimer del deal ya está en <code>DealCalculator.tsx</code> como <code>text-xs</code> dentro del badge.</p>
+      <h4>After</h4>
+      <pre>&lt;body className="flex min-h-full flex-col ..."&gt;
+  {children}
+  &lt;footer className="mt-auto border-t border-zinc-200 px-6 py-4 text-xs text-zinc-500"&gt;
+    Estimación a partir de publicaciones comparables; el precio publicado
+    no es precio de venta. Catálogo de demostración.
+  &lt;/footer&gt;
+&lt;/body&gt;</pre>
+      <p>En <code>VehicleSheet.tsx</code>, <em>después</em> de <code>&lt;DealCalculator ... /&gt;</code>, un <code>&lt;p className="text-sm text-zinc-600"&gt;</code> con el mismo texto (o <code>deal?.disclaimer</code> si ya hay deal).</p>
+      <h4>Mapa</h4>
+      <table>
+        <tr><th>Archivo</th><th>Para qué</th></tr>
+        <tr><td><code>web/src/app/layout.tsx</code></td><td>Footer global</td></tr>
+        <tr><td><code>web/src/components/VehicleSheet.tsx</code></td><td>Párrafo bajo el calculador</td></tr>
+      </table>
+      <h4>Pasos</h4>
+      <ol>
+        <li><code>make web</code> (API también si querés la ficha con datos).</li>
+        <li>Editá layout y VehicleSheet. Sin librerías nuevas.</li>
+        <li><code>cd web && npm run lint</code></li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <ol>
+        <li><code>http://localhost:3000/</code> — footer visible al final.</li>
+        <li><code>/trims/1?year=2019</code> — disclaimer bajo el deal, se lee sin “cazar” el badge.</li>
+        <li><code>/compare?trim_ids=1,2&amp;year=2019</code> — footer igual (viene del layout).</li>
+      </ol>
+      <h4>DoD</h4>
+      <ul>
+        <li>Home, ficha y compare muestran el footer.</li>
+        <li>Ficha: disclaimer visible fuera del badge.</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <p>El footer no se pega abajo: <code>body</code> ya es <code>flex min-h-full flex-col</code>; el footer lleva <code>mt-auto</code>. Si no aparece en compare, no pusiste el footer en layout (lo pusiste en <code>page.tsx</code>).</p>
+      <h4>No toques</h4>
+      <p>Go, CSS global salvo clases Tailwind que ya usa el repo. No i18n, no modal, no cookies.</p>
+    </article>
+
+    <article class="card" id="e1-103">
+      <div class="meta"><span class="pill">E1-103</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Atajos en el home</h3>
+      <h4>Glosario</h4>
+      <p><strong>Atajo:</strong> un <code>&lt;Link&gt;</code> a una ficha. No es un botón de search (eso pega a la API).</p>
+      <h4>Historia</h4>
+      <p>Como visitante que no sabe qué buscar, quiero 3 ejemplos clickeables para ver el producto.</p>
+      <h4>Before</h4>
+      <p class="label-before">web/src/app/page.tsx</p>
+      <pre>&lt;p className="mt-4 text-lg ..."&gt;
+  ¿Está barato? Compará el precio publicado...
+&lt;/p&gt;
+&lt;HomeSearch /&gt;</pre>
+      <p>No hay links a trims.</p>
+      <h4>After</h4>
+      <p>Debajo del párrafo, una línea “Esto no es un clasificado…” y una lista. Confirmá IDs:</p>
+      <pre>curl 'http://localhost:8080/api/v1/search/trims?q=corolla'</pre>
+      <p>Si el seed no cambió, XEi suele ser <code>trim_id: 1</code>, XLi <code>2</code>. Golf Comfortline: <code>q=golf</code>. Comentario en el JSX: <code>{/* seed ids from migrations/002 */}</code>.</p>
+      <pre>&lt;ul className="mt-6 space-y-2 text-emerald-800"&gt;
+  &lt;li&gt;&lt;Link href="/trims/1?year=2019"&gt;Corolla XEi 2.0 CVT 2019&lt;/Link&gt;&lt;/li&gt;
+  ...
+&lt;/ul&gt;</pre>
+      <p>Importá <code>Link</code> de <code>next/link</code> (HomeSearch ya lo usa).</p>
+      <h4>Mapa</h4>
+      <p>Solo <code>web/src/app/page.tsx</code>. No hace falta tocar <code>HomeSearch.tsx</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li><code>make api</code> + curl search para IDs.</li>
+        <li>Editá <code>page.tsx</code>. Mobile: <code>space-y-2</code> apila.</li>
+        <li>Chrome DevTools 375px y 1280px.</li>
+        <li><code>cd web && npm run lint</code></li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <p>Los 3 links abren ficha con título de esa versión. El form de search sigue buscando <code>corolla</code>.</p>
+      <h4>DoD</h4>
+      <ul>
+        <li>3 links visibles en 375 y 1280.</li>
+        <li>Navegan a la ficha correcta.</li>
+        <li>Search intacto.</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <p>404 en <code>/trims/1</code>: ID mal. 404 en API: no corre <code>make api</code>. Link que dispara search: usaste <code>&lt;button&gt;</code> en vez de <code>&lt;Link href&gt;</code>.</p>
+      <h4>No toques</h4>
+      <p>Autocomplete, dropdown de marcas, analytics, Go.</p>
+    </article>
+
+    <article class="card" id="e1-104">
+      <div class="meta"><span class="pill">E1-104</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+      <h3>Empty states de specs y equipamiento</h3>
+      <h4>Glosario</h4>
+      <p><strong>Empty state:</strong> un bloque con título + texto cuando no hay datos. No un hueco (sección que no se renderiza).</p>
+      <h4>Historia</h4>
+      <p>Como usuario de un trim sin ficha técnica, quiero leer “no está cargada”, no un salto raro en la página.</p>
+      <h4>Before</h4>
+      <p class="label-before">VehicleSheet.tsx — mercado YA tiene empty. Specs y features se ocultan:</p>
+      <pre>{trim.specs ? (
+  &lt;section&gt;...motor...&lt;/section&gt;
+) : null}
+
+{featuresByCategory.size &gt; 0 ? (
+  &lt;section&gt;Equipamiento...&lt;/section&gt;
+) : null}</pre>
+      <h4>After</h4>
+      <p>Siempre renderizá las dos <code>&lt;section&gt;</code>. Si no hay data, un <code>&lt;p&gt;</code>:</p>
+      <pre>&lt;section className="rounded-xl border ... p-5"&gt;
+  &lt;h2 className="text-sm font-semibold uppercase ..."&gt;Ficha técnica&lt;/h2&gt;
+  {trim.specs ? ( ...dl... ) : (
+    &lt;p className="mt-4 text-sm text-zinc-600"&gt;
+      Ficha técnica no cargada para esta versión.
+    &lt;/p&gt;
+  )}
+&lt;/section&gt;</pre>
+      <p>Equipamiento: igual con “Sin equipamiento cargado.” No cambies el bloque Mercado (ya está bien). No muestres <code>$0</code> si un percentil es null.</p>
+      <h4>Mapa</h4>
+      <p>Solo <code>web/src/components/VehicleSheet.tsx</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Reemplazá los dos ternarios <code>? section : null</code> por section siempre visible.</li>
+        <li>Para probar specs vacías: un trim seed sin <code>vehicle_specs</code> (Yaris XS a veces tiene menos). O temporalmente forzà <code>trim.specs</code> a null en el componente, verificá, revertí el force.</li>
+        <li><code>npm run lint</code></li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <p>XEi 2019 sigue mostrando motor. Un trim/año sin features muestra el <code>&lt;p&gt;</code>. Inspect: existen los headings “Ficha técnica” y “Equipamiento”.</p>
+      <h4>DoD</h4>
+      <ul>
+        <li>Tres casos con <code>&lt;p&gt;</code> visible: specs null, features vacías; mercado ya existía.</li>
+        <li>XEi 2019 no perdió la ficha real.</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <p>No hay trim sin specs en seed: usá el force temporal <code>const specs = null</code> solo para mirar, no lo commitees.</p>
+      <h4>No toques</h4>
+      <p>Skeletons, retry, Go, API.</p>
+    </article>
+
+    <article class="card" id="e1-105">
+      <div class="meta"><span class="pill">E1-105</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
+      <h3>Metadata / title por página</h3>
+      <h4>Glosario</h4>
+      <p><strong>Metadata:</strong> objeto que Next usa para <code>&lt;title&gt;</code> y <code>&lt;meta name="description"&gt;</code>. Se exporta como <code>export const metadata</code> en un Server Component (page o layout). <code>VehicleSheet</code> es <code>"use client"</code>: el title de la ficha va en <code>web/src/app/trims/[id]/page.tsx</code>, no en el client.</p>
+      <h4>Historia</h4>
+      <p>Como usuario con 10 tabs, quiero distinguir Home / Versión / Comparar en la pestaña del browser.</p>
+      <h4>Before</h4>
+      <p class="label-before">web/src/app/layout.tsx</p>
+      <pre>export const metadata: Metadata = {
+  title: "AutoCompare",
+  description: "Compará precios de autos usados en Argentina...",
+};</pre>
+      <p><code>trims/[id]/page.tsx</code> y <code>compare/page.tsx</code> no exportan <code>metadata</code>.</p>
+      <h4>After</h4>
+      <pre>// layout.tsx — description más clara
+description: "Herramienta para saber si un usado en Argentina está barato. No es un clasificado."
+
+// trims/[id]/page.tsx
+export const metadata = { title: "Versión | AutoCompare" };
+
+// compare/page.tsx
+export const metadata = { title: "Comparar | AutoCompare" };</pre>
+      <h4>Mapa</h4>
+      <p><code>web/src/app/layout.tsx</code>, <code>web/src/app/trims/[id]/page.tsx</code>, <code>web/src/app/compare/page.tsx</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Editá los tres exports. Title de trim estático (no hace falta fetch).</li>
+        <li>View-source o mirá el tab.</li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <p><code>/</code> tab “AutoCompare”. <code>/compare?...</code> “Comparar | AutoCompare”. <code>/trims/1</code> “Versión | AutoCompare”.</p>
+      <h4>DoD</h4>
+      <p>Tres titles distintos. Description del layout menciona decisión / no clasificado.</p>
+      <h4>Si te trabás</h4>
+      <p><code>export const metadata</code> en un archivo con <code>"use client"</code> explota. Por eso va en <code>page.tsx</code> del trim (ese archivo no es client; solo importa VehicleSheet).</p>
+      <h4>No toques</h4>
+      <p>OG images, sitemap, favicon.</p>
+    </article>
+
+    <article class="card" id="e1-106">
+      <div class="meta"><span class="pill">E1-106</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
+      <h3>Checklist Railway (markdown)</h3>
+      <h4>Glosario</h4>
+      <p><strong>Reference variable:</strong> en Railway, <code>DATABASE_URL=${{Postgres.DATABASE_URL}}</code> copia la URL del plugin. El nombre <code>Postgres</code> tiene que ser el de la cajita.</p>
+      <h4>Historia</h4>
+      <p>Como junior que no estuvo en el primer deploy, quiero una lista para no repetir “container exited”.</p>
+      <h4>Before</h4>
+      <p>No existe <code>docs/runbooks/railway.md</code>.</p>
+      <h4>After</h4>
+      <p>Un markdown con checklist. Copiá esta estructura:</p>
+      <pre># Railway
+
+## Servicios (3)
+- Postgres (plugin)
+- API: Dockerfile de la raíz del repo (Go)
+- Web: Root Directory = `web`, Dockerfile `web/Dockerfile`
+
+## Variables
+- API: solo `DATABASE_URL=${{NOMBRE_CAJITA_POSTGRES.DATABASE_URL}}`
+- Web (BUILD): `NEXT_PUBLIC_API_URL=https://&lt;domain-de-la-API&gt;`
+- No pongas INGEST_FILE ni NEXT_PUBLIC en la API
+- No uses localhost en prod
+
+## Comprobar
+- API: https://&lt;api&gt;/health → {"status":"ok"}
+- Web: https://&lt;web&gt;/ es la portada AutoCompare
+- Si /health ok pero / es 404 JSON: estás en el domain de la API
+
+## Si exited
+- Logs: `DATABASE_URL is not set` o unix `/tmp/.s.PGSQL.5432` = URL rota / nombre de cajita mal</pre>
+      <h4>Mapa</h4>
+      <p>Crear <code>docs/runbooks/railway.md</code>. No toques Dockerfiles.</p>
+      <h4>Pasos</h4>
+      <p>Creá el archivo. Pedile a alguien que no deployó que lo lea en 5 minutos: si pregunta “dónde está Root Directory”, agregá “servicio web → Settings → Source → Add Root Directory”.</p>
+      <h4>DoD</h4>
+      <p>El archivo existe y cubre 3 servicios, vars, health, domain API≠web, exited.</p>
+      <h4>Si te trabás</h4>
+      <p>No hace falta acceso a Railway para escribir el runbook; el conocimiento ya está en este HTML.</p>
+      <h4>No toques</h4>
+      <p>Código, Railway dashboard (salvo que el PO pida actualizar vars).</p>
+    </article>
+    <p class="exit"><strong>Sprint 1 exit:</strong> atajos + N=5 + footer. Demo en el domain <strong>web</strong>, no en el de la API.</p>
+
+    <h2 id="s2">Sprint 2 — Identidad (E2) · ~15 pts</h2>
+    <p>Meta: un listing sin <code>trim_id</code> numérico solo entra si el título matchea un alias conocido.</p>
+
+    <article class="card" id="e2-201">
+      <div class="meta"><span class="pill">E2-201</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Migración <code>trim_aliases</code></h3>
+      <h4>Glosario</h4>
+      <ul>
+        <li><strong>.up.sql:</strong> aplica el cambio. <strong>.down.sql:</strong> lo deshace (el server en prod solo corre Up).</li>
+        <li><strong>Unique (source, raw_name):</strong> no podés tener dos filas “file” + “TOYOTA COROLLA XEI 2.0 CVT”.</li>
+        <li><strong>FK trim_id:</strong> si el trim no existe, Postgres rechaza el INSERT (error 23503).</li>
+      </ul>
+      <h4>Historia</h4>
+      <p>Como el worker futuro, necesito una tabla que diga “este texto crudo = este trim_id”.</p>
+      <h4>Before</h4>
+      <p>No hay tabla. El worker exige <code>trim_id</code> en el JSON. <code>migrations/fs.go</code> ya embebe <code>*.sql</code> — no lo edites.</p>
+      <h4>After</h4>
+      <p class="label-before">migrations/006_create_trim_aliases.up.sql</p>
+      <pre>CREATE TABLE trim_aliases (
+    id SERIAL PRIMARY KEY,
+    source TEXT NOT NULL,
+    raw_name TEXT NOT NULL,
+    trim_id INT NOT NULL REFERENCES trims(id),
+    year_from INT,
+    year_to INT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (source, raw_name)
+);
+
+INSERT INTO trim_aliases (source, raw_name, trim_id)
+SELECT 'file', v.raw, t.id
+FROM trims t
+JOIN generations g ON g.id = t.generation_id
+JOIN (VALUES
+    ('TOYOTA COROLLA XEI 2.0 CVT', 'XEi 2.0 CVT'),
+    ('TOYOTA COROLLA XEI 2.0', 'XEi 2.0 CVT'),
+    ('COROLLA XEI 2.0 CVT', 'XEi 2.0 CVT')
+) AS v(raw, trim_name)
+  ON t.name = v.trim_name AND g.name = 'E210';</pre>
+      <p>Guardá <code>raw_name</code> ya en mayúsculas (el normalizer de E2-202 tiene que producir lo mismo). Down: <code>DROP TABLE trim_aliases;</code></p>
+      <h4>Mapa</h4>
+      <p>Solo <code>migrations/006_create_trim_aliases.up.sql</code> y <code>.down.sql</code>. 6–8 filas seed XEi.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Creá los dos SQL.</li>
+        <li><code>make db-up && make api</code> — log <code>migrations applied</code>.</li>
+        <li>Si la API ya había migrado: restart. Si falló a medias, leé el error (tabla existe / FK).</li>
+        <li>Verificá: <code>docker exec -it autocompare-postgres psql -U user -d autocompare_db -c '\d trim_aliases'</code></li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <pre>docker exec -it autocompare-postgres psql -U user -d autocompare_db -c \
+  "INSERT INTO trim_aliases (source, raw_name, trim_id) VALUES ('file','TOYOTA COROLLA XEI 2.0 CVT',1);"
+# segunda vez debe fallar unique</pre>
+      <h4>DoD</h4>
+      <ul>
+        <li>Up aplica; unique viola; down dropea.</li>
+        <li>No tocaste <code>fs.go</code>.</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <p><code>relation trims does not exist</code>: migraciones anteriores no corrieron. <code>migrations applied</code> con ErrNoChange: ya estaba aplicada; cambiaste el SQL tarde — o new file 007 o down+up en local (no en prod).</p>
+      <h4>No toques</h4>
+      <p>Worker, Go de application, embed. Resolver títulos = E2-203.</p>
+    </article>
+
+    <article class="card" id="e2-202">
+      <div class="meta"><span class="pill">E2-202</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Normalizer de títulos</h3>
+      <h4>Glosario</h4>
+      <p><strong>Normalizar:</strong> transformar “toyota  corolla   xei 2.0 cvt” en una clave estable, p.ej. <code>TOYOTA COROLLA XEI 2.0 CVT</code>. Mismo input sucio = mismo output.</p>
+      <h4>Historia</h4>
+      <p>Como el matcher, quiero comparar manzanas con manzanas (mayúsculas, tildes, espacios).</p>
+      <h4>Before</h4>
+      <p>No existe el paquete <code>internal/infrastructure/ingestion/normalize/</code>.</p>
+      <h4>After</h4>
+      <pre>// normalize.go
+package normalize
+
+import "strings"
+
+func Title(s string) string {
+    s = strings.TrimSpace(s)
+    s = strings.Join(strings.Fields(s), " ")
+    s = stripTildes(s)
+    return strings.ToUpper(s)
+}</pre>
+      <p><code>stripTildes</code>: mapa <code>áéíóúñÁÉÍÓÚÜü → AEIOUN...</code> con <code>strings.NewReplacer</code> o un loop. Stdlib only. No uses esto en HTTP todavía.</p>
+      <h4>Mapa</h4>
+      <p><code>normalize.go</code> + <code>normalize_test.go</code> en esa carpeta. Cero cambios en worker.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Creá el paquete.</li>
+        <li>Pegá el test. <code>go test ./internal/infrastructure/ingestion/normalize/ -count=1</code></li>
+      </ol>
+      <h4>Test copy-paste</h4>
+      <pre>func TestTitle(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"toyota  corolla   xei 2.0 cvt", "TOYOTA COROLLA XEI 2.0 CVT"},
+		{"Toyota Corolla XEI 2.0 CVT", "TOYOTA COROLLA XEI 2.0 CVT"},
+		{"  Corolla XEi  ", "COROLLA XEI"},
+		{"Año", "ANO"},
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := Title(c.in); got != c.want {
+			t.Fatalf("Title(%q)=%q want %q", c.in, got, c.want)
+		}
+	}
+}</pre>
+      <p>Agregá ≥3 casos más (tilde, ñ, tabs). Total ≥8.</p>
+      <h4>DoD</h4>
+      <p>≥8 casos verdes. Cero imports de HTTP/pgx.</p>
+      <h4>Si te trabás</h4>
+      <p><code>ToUpper</code> de <code>ñ</code> es <code>Ñ</code>; tu mapa debe convertir a <code>N</code> si así lo documentaste. Sé consistente con el seed de aliases (E2-201).</p>
+      <h4>No toques</h4>
+      <p>Handlers, worker, SQL.</p>
+    </article>
+
+    <article class="card" id="e2-203">
+      <div class="meta"><span class="pill">E2-203</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Resolver <code>trim_id</code> desde <code>raw_title</code></h3>
+      <h4>Glosario</h4>
+      <p><strong>Resolve:</strong> given <code>source=file</code> + título crudo → <code>trim_id</code> o “no existe”. <strong>Skip:</strong> no insertar, log warn, el proceso sigue (exit 0). Hoy <code>toListing</code> exige <code>TrimID &gt; 0</code>.</p>
+      <h4>Historia</h4>
+      <p>Como operador, quiero dropear un JSON de títulos de ML sin saber nuestros IDs internos.</p>
+      <h4>Before</h4>
+      <p class="label-before">file_listings.go toListing</p>
+      <pre>if r.TrimID &lt;= 0 || r.Year &lt;= 0 || r.Price &lt;= 0 {
+    return domain.Listing{}, false
+}</pre>
+      <h4>After (flujo)</h4>
+      <ol>
+        <li>JSON puede omitir <code>trim_id</code> y traer <code>raw_title</code>.</li>
+        <li>Worker: si <code>trim_id</code> falta, <code>normalize.Title(raw_title)</code> + <code>AliasRepository.Resolve</code>.</li>
+        <li>0 filas → skip + slog warn. Encontró → llená <code>listing.TrimID</code> y upsert.</li>
+      </ol>
+      <p>El SQL vive en <code>postgres/alias_repository.go</code>, no en <code>file_listings.go</code>:</p>
+      <pre>SELECT trim_id FROM trim_aliases
+WHERE source = $1 AND raw_name = $2</pre>
+      <h4>Mapa</h4>
+      <table>
+        <tr><th>Archivo</th><th>Para qué</th></tr>
+        <tr><td><code>internal/domain/ports.go</code></td><td>Opcional: port <code>Resolve(ctx, source, raw) (id int, ok bool, err error)</code></td></tr>
+        <tr><td><code>internal/infrastructure/postgres/alias_repository.go</code></td><td>SQL</td></tr>
+        <tr><td><code>internal/infrastructure/ingestion/file_listings.go</code></td><td>Campo <code>RawTitle</code>; <code>trim_id</code> opcional en parse</td></tr>
+        <tr><td><code>cmd/worker/main.go</code></td><td>Loop: resolve si TrimID==0</td></tr>
+      </table>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Hacé <code>toListing</code> aceptar TrimID 0 si hay RawTitle (el worker resuelve después). O devolvê un DTO intermedio. Lo más simple para junior: parse guarda <code>RawTitle</code> en un struct nuevo; worker resuelve antes del upsert.</li>
+        <li>Implementá Resolve. Test unitario del parser: JSON sin trim_id no explota.</li>
+        <li><code>go test ./internal/infrastructure/ingestion/ ./cmd/worker/ -count=1</code> (worker puede no tener tests: al menos compile <code>go build -o /tmp/w ./cmd/worker</code>).</li>
+      </ol>
+      <h4>Test copy-paste (parser)</h4>
+      <pre>func TestParseJSON_rawTitleWithoutTrimID(t *testing.T) {
+	data := []byte(`[
+	  {"source":"file","external_id":"x","year":2019,"price":20000000,
+	   "raw_title":"Toyota Corolla XEI 2.0 CVT"}
+	]`)
+	// adaptá a tu API: si ParseFile exige path, usá un temp file
+}</pre>
+      <h4>Verificación manual</h4>
+      <pre># JSON de una línea, trim_id ausente, raw_title = un alias seed
+make ingest   # o go run ./cmd/worker testdata/tmp.json
+# log inserted=1
+# título basura → skipped++, exit 0</pre>
+      <h4>DoD</h4>
+      <ul>
+        <li>Alias seed + raw_title → upsert XEi.</li>
+        <li>Desconocido → skip, exit 0, warn.</li>
+        <li>JSON con trim_id numérico sigue igual.</li>
+      </ul>
+      <h4>Si te trabás</h4>
+      <p>Pusiste <code>pgx</code> en <code>file_listings.go</code> → sacalo; ese archivo solo parsea. Unique de aliases no matchea porque no normalizaste al insertar el seed (E2-201) igual que <code>Title()</code>.</p>
+      <h4>No toques</h4>
+      <p>Fuzzy/Levenshtein. Crear trims on the fly. Endpoints HTTP.</p>
+    </article>
+
+    <article class="card" id="e2-204">
+      <div class="meta"><span class="pill">E2-204</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+      <h3>Tests de 15 variantes reales</h3>
+      <h4>Glosario</h4>
+      <p>Variante = string que un humano pegaría de un aviso. Se copian a mano a un test. No hay HTTP a ML.</p>
+      <h4>Historia</h4>
+      <p>Como reviewer, quiero ver 15 casos escritos para no romper el matcher en silencio.</p>
+      <h4>Before</h4>
+      <p>Solo los casos sintéticos de E2-202.</p>
+      <h4>After</h4>
+      <p>Tabla de 15 <code>in</code> → <code>wantNormalized</code> y, si aplica, <code>wantTrimName</code> “XEi 2.0 CVT”. Al menos 10 deben ser el XEi seed. 5 pueden ser “no match” (ok=false).</p>
+      <h4>Mapa</h4>
+      <p><code>normalize_test.go</code> o <code>alias_resolve_test.go</code>. No scrapers.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Anotá 15 títulos (inventados pero realistas: “Toyota Corolla 2.0 XEI CVT 2019”, “XEi Pack”, etc.).</li>
+        <li>Test tabla-driven.</li>
+        <li><code>go test ./internal/infrastructure/ingestion/... -count=1</code></li>
+      </ol>
+      <h4>DoD</h4>
+      <p>15 casos. ≥10 resuelven a XEi (después de E2-201+202+203). 0 llamadas de red.</p>
+      <h4>Si te trabás</h4>
+      <p>Un “XEi Pack” no está en aliases: o lo agregás en 006/007 seed, o el caso es “no match” a propósito.</p>
+      <h4>No toques</h4>
+      <p>Producción, Railway, HTTP.</p>
+    </article>
+    <p class="exit"><strong>Sprint 2 exit:</strong> JSON de títulos sin IDs carga Corolla y skipea basura.</p>
+
+    <h2 id="s3">Sprint 3 — Catálogo (E3) · ~19 pts</h2>
+    <p>Más trims con specs. <strong>Cero listings seed nuevos</strong> (market vacío + empty state).</p>
+
+    <article class="card" id="e3-301">
+      <div class="meta"><span class="pill">E3-301</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Validador de catálogo</h3>
+      <h4>Glosario</h4>
+      <p><strong>catalog-check:</strong> comando que falla (exit 1) si el seed está mal (años invertidos, nombres vacíos).</p>
+      <h4>Historia</h4>
+      <p>Como reviewer, no quiero mergear un SQL que ponga <code>year_from=2020, year_to=2018</code>.</p>
+      <h4>Before</h4>
+      <p>No hay <code>make catalog-check</code>. Nadie valida el SQL de seed.</p>
+      <h4>After (opción junior: test Go, no parser SQL completo)</h4>
+      <p>La forma más simple: un test en <code>internal/infrastructure/postgres</code> o <code>cmd/catalogcheck</code> que, <em>si</em> hay DB, corra:</p>
+      <pre>SELECT COUNT(*) FROM trims WHERE year_from &gt; year_to OR name = '';</pre>
+      <p>Si no hay harness de DB: test que lea <code>migrations/*seed*.sql</code> como texto y falle si encuentra el regex <code>year_from &gt; year_to</code> — frágil. Preferí query SQL + documentar “requiere make db-up”.</p>
+      <p>Makefile:</p>
+      <pre>catalog-check:
+	go test ./internal/infrastructure/postgres/ -run Catalog -count=1</pre>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Elegí query o test de archivo. Implementá.</li>
+        <li>Fixture mental: un <code>_test.go</code> con SQL inválido en string, o un archivo testdata que el check rechaza.</li>
+        <li><code>make catalog-check</code> pasa en main.</li>
+      </ol>
+      <h4>DoD</h4>
+      <p>Check falla con fixture roto; pasa en el seed actual. Target en Makefile.</p>
+      <h4>Si te trabás</h4>
+      <p>No parsees SQL a mano (un mes). Una query contra DB local alcanza.</p>
+      <h4>No toques</h4>
+      <p>Catálogo nuevo (302). CI GitHub si no existe workflow — opcional, no blocker.</p>
+    </article>
+
+    <article class="card" id="e3-302">
+      <div class="meta"><span class="pill">E3-302</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+      <h3>Completar Toyota (+8 trims)</h3>
+      <h4>Glosario</h4>
+      <p>Mirá <code>migrations/002_seed_catalog.up.sql</code> y <code>003_create_specs_features.up.sql</code>: así se insertan brand → model → generation → trim → specs → features. <strong>No</strong> insertes <code>vehicle_listings</code> (eso mentiría el mercado).</p>
+      <h4>Historia</h4>
+      <p>Como usuario, buscar <code>hilux</code> tiene que devolver una ficha con motor, aunque deal diga sin datos.</p>
+      <h4>Before</h4>
+      <p>Toyota: Corolla XEi/XLi, Yaris XS. Search <code>hilux</code> → <code>[]</code>.</p>
+      <h4>After</h4>
+      <p><code>migrations/007_seed_toyota_expand.up.sql</code>: Hilux (2 trims), más Yaris/Etios o SW4. Cada trim: specs + airbags/ABS/ESP. Down: <code>DELETE FROM vehicle_features WHERE trim_id IN (SELECT id FROM trims WHERE name IN (...))</code> y después trims/generations/models — orden inverso a las FKs.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Copiá el estilo de 002/003. Datos de una ficha pública (no copies precios CCA).</li>
+        <li><code>make api</code> → migrations applied.</li>
+        <li><code>curl 'http://localhost:8080/api/v1/search/trims?q=hilux'</code></li>
+        <li>Abrí la ficha en <code>:3000</code>. Deal → insufficient (E1-101).</li>
+        <li>Partí 302a Hilux / 302b resto si el PR es enorme.</li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <p><code>q=hilux</code> y <code>q=yaris</code> devuelven trims. Motor visible. <code>/deal?year=&amp;price=1</code> → insufficient_data.</p>
+      <h4>DoD</h4>
+      <p>≥8 trims Toyota nuevos. 0 listings seed nuevos. Down no rompe FKs.</p>
+      <h4>Si te trabás</h4>
+      <p><code>duplicate key brands_name</code>: no reinsertes Toyota. Usá <code>SELECT id FROM brands WHERE name='Toyota'</code>. Hilux generation year_from &gt; year_to → E3-301 te va a gritar.</p>
+      <h4>No toques</h4>
+      <p>Listings, precios de guía, worker.</p>
+    </article>
+
+    <article class="card" id="e3-303">
+      <div class="meta"><span class="pill">E3-303</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+      <h3>VW + Fiat de volumen</h3>
+      <h4>Historia</h4>
+      <p>Igual que 302 para Gol/Polo/Amarok y Toro o Pulse. Cronos ya existe: no lo dupliques.</p>
+      <h4>Before</h4>
+      <p>VW: solo Golf Comfortline. Fiat: Cronos Drive 1.3.</p>
+      <h4>After</h4>
+      <p><code>migrations/008_seed_vw_fiat_expand.up.sql</code> (o 007-b si 007 lo usó Toyota). Mismo patrón. Si no entra en el sprint, el PO mueve esto a Sprint 4: <strong>catálogo &gt; worker</strong>.</p>
+      <h4>Pasos / DoD</h4>
+      <p>Igual que 302. Search <code>amarok</code>, <code>polo</code>, <code>toro</code> → ficha + specs. 0 listings seed.</p>
+      <h4>No toques</h4>
+      <p>Toyota (302). Precios guía inventados masivos.</p>
+    </article>
+
+    <h2 id="s4">Sprint 4 — Ingest operable (E4) · ~13 pts</h2>
+
+    <article class="card" id="e4-401">
+      <div class="meta"><span class="pill">E4-401</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Dockerfile del worker</h3>
+      <h4>Glosario</h4>
+      <p>El <code>Dockerfile</code> de la raíz buildea <code>./cmd/server</code> y hace <code>CMD ["/server"]</code>. El worker no escucha HTTP: si Railway lo trata como web, healthcheck falla. Por eso <strong>otro</strong> archivo <code>Dockerfile.worker</code> y un servicio cron/one-off.</p>
+      <h4>Before</h4>
+      <p class="label-before">Dockerfile (raíz)</p>
+      <pre>RUN CGO_ENABLED=0 go build -o /bin/server ./cmd/server
+CMD ["/server"]</pre>
+      <p><code>.dockerignore</code> excluye <code>testdata</code>.</p>
+      <h4>After</h4>
+      <pre># Dockerfile.worker — copiá el de la API, cambiá:
+RUN CGO_ENABLED=0 go build -o /bin/worker ./cmd/worker
+COPY testdata /testdata
+USER nobody
+CMD ["/worker"]</pre>
+      <p>Makefile: <code>build-worker:\n\tgo build -o bin/worker ./cmd/worker</code>. Runbook: no Generate domain; env <code>DATABASE_URL</code> + <code>INGEST_FILE=/testdata/...</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Creá Dockerfile.worker. Si copiás testdata, no copies basura enorme.</li>
+        <li><code>make build-worker</code> — tiene que producir <code>bin/worker</code>.</li>
+        <li>Párrafo en <code>docs/runbooks/railway.md</code>.</li>
+      </ol>
+      <h4>DoD</h4>
+      <p><code>go build -o bin/worker ./cmd/worker</code> ok. CMD no es el server. Documentado que no es un servicio HTTP.</p>
+      <h4>Si te trabás</h4>
+      <p>Railway buildea el Dockerfile de la raíz: tenés que elegir Dockerfile path <code>Dockerfile.worker</code> en el servicio cron.</p>
+      <h4>No toques</h4>
+      <p>El Dockerfile de la API salvo que rompas el ignore. No levantes HTTP en el worker.</p>
+    </article>
+
+    <article class="card" id="e4-402">
+      <div class="meta"><span class="pill">E4-402</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Campos opcionales raw_title, active, observed_at</h3>
+      <h4>Before</h4>
+      <p><code>fileRow</code> tiene source, external_id, trim_id, year, km, price, currency, location, url. <code>toListing</code> falla sin trim_id.</p>
+      <h4>After</h4>
+      <pre>type fileRow struct {
+    // ...campos actuales...
+    RawTitle    string `json:"raw_title"`
+    Active      *bool  `json:"active"`
+    ObservedAt  string `json:"observed_at"`
+}</pre>
+      <p>Defaults: active true, observed_at vacío (= now en el upsert, ya usa NOW()). CSV: columnas opcionales, no las pongas en el required list.</p>
+      <h4>Mapa</h4>
+      <p><code>file_listings.go</code>, <code>file_listings_test.go</code>, <code>domain.Listing</code> solo si hace falta un campo nuevo (si no, no).</p>
+      <h4>Test copy-paste</h4>
+      <pre>func TestParseJSON_optionalFields(t *testing.T) {
+	// raw_title presente, trim_id ausente o 0 — no debe panic
+	// active:false se preserva si ya resolviste E2-203
+}</pre>
+      <h4>DoD</h4>
+      <p>JSON viejo (sin esos campos) sigue parseando. Tests verdes.</p>
+      <h4>No toques</h4>
+      <p>Expire (403). Dockerfile.</p>
+    </article>
+
+    <article class="card" id="e4-403">
+      <div class="meta"><span class="pill">E4-403</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Expire listings no vistos</h3>
+      <h4>Glosario</h4>
+      <p><code>ListByTrimYear</code> y <code>MarketSummary</code> ya filtran <code>active = true</code>. Expire = poner <code>active=false</code> si <code>last_seen_at</code> es viejo. No borres la fila.</p>
+      <h4>Historia</h4>
+      <p>Como el mercado, no quiero contar un aviso que no vimos en 14 días.</p>
+      <h4>Before</h4>
+      <p>Worker solo upsert. No hay flag expire.</p>
+      <h4>After</h4>
+      <pre>// cmd/worker
+expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
+// si *expireDays &gt; 0:
+// UPDATE vehicle_listings SET active = false
+// WHERE active AND last_seen_at &lt; NOW() - make_interval(days =&gt; $1)</pre>
+      <p>Use case chico <code>ExpireStale(ctx, days int) (int64, error)</code> en application o método en ListingRepository. Log <code>expired=N</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Repo method + flag.</li>
+        <li>Test: fake repo o SQL. Si no hay DB test, test del use case con fake que cuente el call.</li>
+        <li>Manual: UPDATE a mano <code>last_seen_at</code> a 30 días atrás, corré <code>-expire-days 14</code>, curl listings.</li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <pre># psql: UPDATE vehicle_listings SET last_seen_at = NOW() - INTERVAL '30 days' WHERE id = ...
+go run ./cmd/worker -expire-days 14 testdata/listings.json
+curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
+# esa fila no está; market.count bajó</pre>
+      <h4>DoD</h4>
+      <p>Fila vieja desaparece de GET listings y baja count. No se DELETE.</p>
+      <h4>Si te trabás</h4>
+      <p>El upsert del mismo run pone <code>last_seen_at=NOW()</code> y <code>active=TRUE</code>: corré expire <em>después</em> del upsert o en un invocación solo expire (archivo dummy / flag sin file). Documentalo.</p>
+      <h4>No toques</h4>
+      <p>UI. Historia de precios (E8).</p>
+    </article>
+
+    <article class="card" id="e4-404">
+      <div class="meta"><span class="pill">E4-404</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+      <h3>Dry-run + JSON de títulos</h3>
+      <h4>Before</h4>
+      <p><code>testdata/listings.json</code> trae <code>trim_id</code>. <code>-dry-run</code> ya existe en el worker.</p>
+      <h4>After</h4>
+      <pre>// testdata/listings.titles.json
+[{"source":"file","external_id":"demo-1","year":2019,"price":24800000,
+  "raw_title":"Toyota Corolla XEI 2.0 CVT"}]</pre>
+      <p>README worker: primer run en prod siempre <code>go run ./cmd/worker -dry-run testdata/listings.titles.json</code>.</p>
+      <h4>DoD</h4>
+      <p>El archivo existe. README lo menciona. Dry-run no escribe DB.</p>
+      <h4>No toques</h4>
+      <p>Lógica de resolve (ya E2-203).</p>
+    </article>
+    <p class="exit"><strong>Sprint 4 exit:</strong> dry-run + expire documentados. Cerrar E3-303 si quedó.</p>
+
+    <h2 id="s5">Sprint 5 — Fuentes (E5) · ~14 pts</h2>
+    <p><strong>Gate:</strong> cero clientes HTTP a portales.</p>
+
+    <article class="card" id="e5-501">
+      <div class="meta"><span class="pill">E5-501</span><span class="pill">5 pts</span><span class="pill spike">Spike</span></div>
+      <h3>Legal <code>docs/SOURCES.md</code></h3>
+      <h4>Glosario</h4>
+      <p><strong>Spike:</strong> investigación con entregable escrito. Done = decisión, no código. Senior tiene que escribir “Accepted” en el PR.</p>
+      <h4>Historia</h4>
+      <p>Como el equipo, no queremos scrapear CCA y enterarnos en un juicio.</p>
+      <h4>Before</h4>
+      <p>DESIGN.md §9 existe; no hay <code>docs/SOURCES.md</code> con yes/no.</p>
+      <h4>After</h4>
+      <p>Tabla: Fuente | Permitido / No / Gris | Notas | Link. Última línea: <code>Decision: use_ml_api = later | no | yes</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Leé DESIGN §9. Abrí docs oficiales ML Developers (vehículos), ToS Autocosmos, CCA/ACARA (reproducción), DNRPA (fiscal).</li>
+        <li>No escribas scrapers “para probar”.</li>
+        <li>PR solo con el markdown. Pedí review senior.</li>
+      </ol>
+      <h4>DoD</h4>
+      <p>Archivo + una línea de decisión + review senior.</p>
+      <h4>No toques</h4>
+      <p>Go, worker HTTP clients.</p>
+    </article>
+
+    <article class="card" id="e5-502">
+      <div class="meta"><span class="pill">E5-502</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>No mezclar seed con live</h3>
+      <h4>Glosario</h4>
+      <p>Los 10 Corolla XEi 2019 son <code>source='seed'</code>. Si mañana hay <code>source='file'</code>, mezclarlos inventa un mercado.</p>
+      <h4>Before</h4>
+      <p class="label-before">listing_repository.go MarketSummary</p>
+      <pre>WHERE trim_id = $1 AND year = $2 AND active = true</pre>
+      <h4>After</h4>
+      <p>Env <code>MARKET_EXCLUDE_SEED</code>. Si <code>true</code>/<code>1</code>, agregá <code>AND source &lt;&gt; 'seed'</code> en <code>MarketSummary</code> <strong>y</strong> <code>ListByTrimYear</code> (si no, listings y median mienten distinto).</p>
+      <p>Leé la env en <code>main.go</code> y pasala al repo (campo bool), o <code>os.Getenv</code> en el repo — mejor en main para testear el repo con un flag en el constructor: <code>NewListingRepository(pool, excludeSeed bool)</code>.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>Constructor + SQL condicional.</li>
+        <li>Test: si no hay DB, test del string o unit con fake. Ideal: documentá curl con env.</li>
+        <li>README: local default false; Railway true cuando exista otra source.</li>
+      </ol>
+      <h4>Verificación manual</h4>
+      <pre>MARKET_EXCLUDE_SEED=true go run ./cmd/server
+curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
+# count 0 si solo hay seed</pre>
+      <h4>DoD</h4>
+      <p>Flag on → seed no cuenta. Flag off → igual que hoy. Listings y market usan la misma regla.</p>
+      <h4>No toques</h4>
+      <p>UI badge (503). Borrar filas seed.</p>
+    </article>
+
+    <article class="card" id="e5-503">
+      <div class="meta"><span class="pill">E5-503</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Badge de fuente en listings</h3>
+      <h4>Before</h4>
+      <p class="label-before">VehicleSheet.tsx lista de listings — precio, km, location. <code>listing.source</code> existe en el tipo y no se muestra.</p>
+      <h4>After</h4>
+      <pre>function sourceLabel(s: string) {
+  if (s === "seed") return "Demostración";
+  if (s === "file") return "Carga manual";
+  return s;
+}
+// junto al precio:
+&lt;span className="text-xs text-zinc-500"&gt;{sourceLabel(listing.source)}&lt;/span&gt;
+// si listing.url:
+&lt;a href={listing.url} target="_blank" rel="noopener noreferrer"&gt;Ver aviso&lt;/a&gt;</pre>
+      <h4>Verificación</h4>
+      <p><code>/trims/1?year=2019</code> — se lee “Demostración”.</p>
+      <h4>DoD</h4>
+      <p>Seed etiquetado. Links externos con rel=noopener.</p>
+      <h4>No toques</h4>
+      <p>Go, exclude seed.</p>
+    </article>
+
+    <article class="card" id="e5-504">
+      <div class="meta"><span class="pill">E5-504</span><span class="pill">1 pt</span><span class="pill chore">Chore</span></div>
+      <h3>Runbook: apagar seed en Railway</h3>
+      <h4>After</h4>
+      <p>En <code>docs/runbooks/railway.md</code>: “Cuando Corolla 2019 tenga ≥5 listings no-seed, setear <code>MARKET_EXCLUDE_SEED=true</code> en la API y Redeploy. No el día 1.”</p>
+      <h4>DoD</h4>
+      <p>Párrafo existe. No cambia vars de prod vos (salvo que el PO lo pida).</p>
+      <h4>No toques</h4>
+      <p>Código.</p>
+    </article>
+    <p class="exit"><strong>Sprint 5 exit:</strong> decisión legal escrita. UI no finge que seed es ML.</p>
+
+    <h2 id="s6">Sprint 6 — km + compare · ~16 pts</h2>
+
+    <article class="card" id="e6-601">
+      <div class="meta"><span class="pill">E6-601</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+      <h3>Filtro km_min / km_max</h3>
+      <h4>Glosario</h4>
+      <p>Un XEi 40k km no es comparable a uno de 180k. El filtro tiene que ser el <strong>mismo</strong> en listings, market y deal. Si no, el badge miente.</p>
+      <h4>Historia</h4>
+      <p>Como comprador, quiero ver el mercado de autos “parecidos en km”.</p>
+      <h4>Before</h4>
+      <p>Handlers de listings/market/deal solo leen <code>year</code> (y price en deal). SQL no menciona <code>km</code> salvo devolverlo.</p>
+      <h4>After</h4>
+      <p>Query opcionales. Default: sin filtro (como hoy). Inválido → <code>400 INVALID_KM</code>.</p>
+      <p><strong>Decisión (anotala en README):</strong> listings con <code>km IS NULL</code> <em>entran</em> al filtro (recomendado) o se excluyen. Testeá esa decisión.</p>
+      <pre>-- si NULL entra:
+AND ($min::int IS NULL OR km IS NULL OR km &gt;= $min)
+AND ($max::int IS NULL OR km IS NULL OR km &lt;= $max)</pre>
+      <p>Receta hex: port/use case ganan min/max; handler parsea. UI: chips fijos “Cualquier km” vs “80–140 mil” en VehicleSheet; <code>api.ts</code> pasa query.</p>
+      <h4>Mapa</h4>
+      <p><code>ports.go</code>, <code>listing_repository.go</code>, <code>list_listings.go</code>, <code>get_market_summary.go</code>, <code>assess_deal.go</code>, <code>handler.go</code>, <code>api.ts</code>, <code>VehicleSheet.tsx</code>, README.</p>
+      <h4>Pasos</h4>
+      <ol>
+        <li>SQL + use cases + handler (un PR backend primero si se va de las manos).</li>
+        <li>Tests handler 400 <code>km_min=foo</code>.</li>
+        <li>Chips UI + refetch de market, deal, listings juntos.</li>
+      </ol>
+      <h4>Verificación</h4>
+      <pre>curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
+curl 'http://localhost:8080/api/v1/trims/1/market?year=2019&amp;km_min=80000&amp;km_max=140000'
+# count distinto si hay km fuera de banda en el seed</pre>
+      <p>Ficha: click chip → cambian mediana y lista.</p>
+      <h4>DoD</h4>
+      <p>Mismo filtro en 3 endpoints. UI 2 chips. 400 INVALID_KM. README documenta NULL.</p>
+      <h4>Si te trabás</h4>
+      <p>Deal no recibe km → badge viejo. Pasá los mismos params. Seed tiene km variados (76k–145k): el chip 80–140 debería cambiar count.</p>
+      <h4>No toques</h4>
+      <p>Regresión precio~km. Fallback ±1 año (602).</p>
+    </article>
+
+    <article class="card" id="e7-701">
+      <div class="meta"><span class="pill">E7-701</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Comparar desde el search</h3>
+      <h4>Glosario</h4>
+      <p>Hoy “Comparar” vive en VehicleSheet y usa <code>sessionStorage</code> key <code>compare_trim_ids</code>. El home no suma trims.</p>
+      <h4>Historia</h4>
+      <p>Como usuario, quiero armar un compare desde <code>/</code> sin abrir cada ficha.</p>
+      <h4>Before</h4>
+      <p><code>HomeSearch.tsx</code>: cada resultado es un Link a la ficha. No hay botón Comparar.</p>
+      <h4>After</h4>
+      <ol>
+        <li>Extraé <code>readCompareIds</code> / <code>addCompareId</code> de VehicleSheet a <code>web/src/lib/compare.ts</code>.</li>
+        <li>VehicleSheet importa de ahí (mismo comportamiento).</li>
+        <li>En cada resultado de HomeSearch: botón “Comparar” que llama <code>addCompareId(result.trim_id)</code>. Si ya está: texto “Agregada”. Tope 3.</li>
+        <li>Barra fija: “Comparar N” → <code>/compare?trim_ids=1,2&amp;year=2019</code> donde year es <code>year_from</code> del primer trim (o 2019 si null).</li>
+      </ol>
+      <h4>Pasos</h4>
+      <p>Extraer → usar en dos componentes → lint. No hace falta test Go.</p>
+      <h4>Verificación</h4>
+      <p>Home → search corolla → Comparar en XEi y XLi → barra → compare con 2 columnas.</p>
+      <h4>DoD</h4>
+      <p>Compare usable sin pasar por <code>/trims/...</code>. Helpers sin duplicar.</p>
+      <h4>Si te trabás</h4>
+      <p>sessionStorage no existe en SSR: HomeSearch ya es <code>"use client"</code>. No leas storage en un Server Component.</p>
+      <h4>No toques</h4>
+      <p>API compare. Año edge (702) salvo el year del link.</p>
+    </article>
+
+    <article class="card" id="e7-702">
+      <div class="meta"><span class="pill">E7-702</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Compare: trim fuera de año</h3>
+      <h4>Historia</h4>
+      <p>XEi E210 es 2019–2026. <code>/compare?trim_ids=1,2&amp;year=2014</code> no debe 404 todo el compare.</p>
+      <h4>Before</h4>
+      <p><code>CompareTrims</code> pide GetTrim + market de ese year. Market count 0 si no hay listings; la UI no explica “esta versión no existía”.</p>
+      <h4>After</h4>
+      <p>200. Si <code>year &lt; trim.YearFrom || (YearTo!=nil &amp;&amp; year &gt; YearTo)</code>, en UI (compare/page.tsx) un texto bajo esa columna: “Esta versión no se cotiza para {year}.” No cambies a 404 global.</p>
+      <p>Si YearFrom/To no viajan en CompareTrim, agregá esos campos JSON en el use case (snake_case) — receta hex chica.</p>
+      <h4>Verificación</h4>
+      <pre>curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&amp;year=2014'
+# 200, no 404
+# UI: mensaje en la columna XEi</pre>
+      <h4>DoD</h4>
+      <p>No explota. Hay mensaje. Compare 2019 sigue igual.</p>
+      <h4>No toques</h4>
+      <p>Fallback de deal.</p>
+    </article>
+    <p class="exit"><strong>Sprint 6 exit:</strong> chips km + compare desde home.</p>
+
+    <h2 id="s7">Sprint 7 — Fallback + ficha · ~13 pts</h2>
+
+    <article class="card" id="e6-602">
+      <div class="meta"><span class="pill">E6-602</span><span class="pill">8 pts</span><span class="pill">Story</span></div>
+      <h3>Fallback trim ±1 año</h3>
+      <h4>Glosario</h4>
+      <p>Si el año exacto tiene &lt; 5 listings (E1-101), unís listings del mismo <code>trim_id</code> en year-1 y year+1. Disclaimer distinto. No hagas mediana ponderada (otra card de 13 pts).</p>
+      <h4>Historia</h4>
+      <p>Como comprador de un 2020 con 2 avisos, prefiero una estimación honesta de 2019+2021 que un badge mentiroso o un vacío seco.</p>
+      <h4>Before</h4>
+      <p><code>MarketSummary(ctx, trimID, year)</code> solo ese año. <code>AssessDeal</code> usa esa summary. Disclaimer OK vs insufficient nada más.</p>
+      <h4>After</h4>
+      <ol>
+        <li>Si count exacto ≥ <code>DealMinSampleSize</code> → igual que hoy, disclaimer normal.</li>
+        <li>Si count exacto &lt; 5 → query mismo trim, <code>year IN (y-1, y+1)</code> (o tres años y excluir exacto). Recalculá count/median/p25/p75 sobre esa unión.</li>
+        <li>Si aún &lt; 5 → insufficient. Si ≥ 5 → ok + <code>DealDisclaimerFallback</code> en domain: “Estimación con el mismo versionado ±1 año; no es el año exacto.”</li>
+      </ol>
+      <p>La UI ya pinta <code>deal.disclaimer</code>. README: documentá el fallback.</p>
+      <h4>Mapa</h4>
+      <p><code>deal.go</code> (const), listing repo (nuevo método o year list), <code>assess_deal.go</code>, <code>get_market_summary.go</code> si el bloque Mercado debe coincidir (sí: mismo disclaimer/regla o el mercado miente vs el badge). Tests application.</p>
+      <h4>Test copy-paste</h4>
+      <pre>func TestAssessDeal_fallbackWhenExactBelowMin(t *testing.T) {
+	// fake que: year 2020 count=2; years 2019+2021 juntos count=6 + mediana
+	// status ok, disclaimer == DealDisclaimerFallback
+}
+func TestAssessDeal_noFallbackWhenExactEnough(t *testing.T) {
+	// year exacto count=5 → disclaimer OK, no mezclar vecinos
+}</pre>
+      <h4>DoD</h4>
+      <p>Exacto 5 → no mezcla. Exacto 2 + vecinos 6 → ok + disclaimer fallback. README.</p>
+      <h4>Si te trabás</h4>
+      <p>Market y deal con reglas distintas → el usuario ve mediana de 2020 y badge de 2019–21. Unificá.</p>
+      <h4>No toques</h4>
+      <p>Peso 0.7 mismo modelo / 0.4 segmento. km filter salvo componer ambos (si 601 existe, aplicá km también a vecinos).</p>
+    </article>
+
+    <article class="card" id="e7-703">
+      <div class="meta"><span class="pill">E7-703</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Secciones Seguridad / Motor / Frenos</h3>
+      <h4>Glosario</h4>
+      <p><code>groupFeaturesByCategory</code> ya agrupa por <code>feature.category</code> (en seed: <code>safety</code>, etc.). Hoy el heading es el string crudo de category.</p>
+      <h4>Before</h4>
+      <pre>{[...featuresByCategory.entries()].map(([category, features]) =&gt; (
+  &lt;h3&gt;{category}&lt;/h3&gt;
+))}</pre>
+      <p>Orden = orden de inserción del Map (no garantizado: safety primero).</p>
+      <h4>After</h4>
+      <pre>const CATEGORY_ORDER = ["safety", "brakes", "comfort", "other"];
+const CATEGORY_ES: Record&lt;string, string&gt; = {
+  safety: "Seguridad",
+  brakes: "Frenos",
+  comfort: "Confort",
+};
+// iterá CATEGORY_ORDER, después el resto
+// motor ya está en la sección Ficha técnica (specs)</pre>
+      <h4>Verificación</h4>
+      <p>XEi 2019: heading “Seguridad” aparece antes que el resto del equipamiento.</p>
+      <h4>DoD</h4>
+      <p>Títulos en español. Orden fijo. Specs de motor no se duplican raro (pueden quedar en ficha técnica).</p>
+      <h4>No toques</h4>
+      <p>API, seed de features salvo que un category esté mal escrito (entonces migración chica, preguntá al PO).</p>
+    </article>
+
+    <article class="card" id="e7-704">
+      <div class="meta"><span class="pill">E7-704</span><span class="pill">2 pts</span><span class="pill">Story</span></div>
+      <h3>Deep link compare siempre</h3>
+      <h4>Historia</h4>
+      <p>Quiero copiar <code>/compare?trim_ids=1,2&amp;year=2019</code> y que un amigo vea lo mismo. sessionStorage solo junta IDs mientras navego.</p>
+      <h4>Before</h4>
+      <p>Compare page ya lee query params (está bien). Algunos botones pueden ir a <code>/compare</code> sin query y depender del storage.</p>
+      <h4>After</h4>
+      <p>Todos los “Comparar” (ficha + home) usan <code>href={`/compare?trim_ids=${ids.join(",")}&amp;year=${year}`}</code>. Recargar esa URL no lee storage.</p>
+      <h4>Verificación</h4>
+      <p>Copiá la URL, ventana incógnito, se ve el compare. Storage vacío no rompe si la URL está completa.</p>
+      <h4>DoD</h4>
+      <p>Cero CTAs a <code>/compare</code> sin query.</p>
+      <h4>No toques</h4>
+      <p>API. Extraer compare.ts si 701 no se hizo: hacé 701 primero.</p>
+    </article>
+    <p class="exit"><strong>Sprint 7 exit:</strong> deal con fallback ±1; ficha más legible.</p>
+
+    <h2 id="s8">Sprint 8 — Historia + operar · ~21 pts</h2>
+
+    <article class="card" id="e8-801">
+      <div class="meta"><span class="pill">E8-801</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Tabla <code>listing_price_observations</code></h3>
+      <h4>Glosario</h4>
+      <p>Hoy <code>Upsert</code> pisa <code>price</code> en la misma fila. Perdés el precio anterior. Observación = fila histórica (listing_id, price, observed_at).</p>
+      <h4>Historia</h4>
+      <p>Como el producto futuro, quiero ver que un aviso bajó de $26M a $24M.</p>
+      <h4>Before</h4>
+      <p class="label-before">listing_repository.go Upsert — un solo INSERT ... ON CONFLICT DO UPDATE SET price=...</p>
+      <h4>After</h4>
+      <pre>CREATE TABLE listing_price_observations (
+  id BIGSERIAL PRIMARY KEY,
+  listing_id BIGINT NOT NULL REFERENCES vehicle_listings(id),
+  price BIGINT NOT NULL,
+  observed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);</pre>
+      <p>En la misma transacción (<code>pool.Begin</code>): upsert listing; si insert o precio cambió, INSERT observación. <code>RETURNING</code> del listing id + precio viejo (SELECT previo o <code>xmax</code> + compare).</p>
+      <p>Junior path: 1) SELECT by (source, external_id). 2) Si no existe, INSERT listing + obs. 3) Si existe y price distinto, UPDATE listing + INSERT obs. 4) Si mismo price, UPDATE last_seen only.</p>
+      <h4>Verificación</h4>
+      <pre>go run ./cmd/worker testdata/listings.json
+# cambiá un price en el JSON, ingest de nuevo
+# SELECT COUNT(*) FROM listing_price_observations;  -- +1 para esa fila
+# vehicle_listings sigue UNIQUE (source, external_id)</pre>
+      <h4>DoD</h4>
+      <p>2 ingest, 2 precios → 2 obs, 1 listing. Misma transacción (si obs falla, no queda listing a medias).</p>
+      <h4>Si te trabás</h4>
+      <p>FK listing_id: necesitás el id del upsert. <code>RETURNING id, price</code>.</p>
+      <h4>No toques</h4>
+      <p>HTTP history (802). UI.</p>
+    </article>
+
+    <article class="card" id="e8-802">
+      <div class="meta"><span class="pill">E8-802</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3><code>GET /api/v1/trims/{id}/market/history</code></h3>
+      <h4>Glosario</h4>
+      <p>Agregación semanal: para cada semana, count y mediana de observaciones (o de listings vigentes — documentá cuál). Flag <code>HISTORY_ENABLED</code>: si false, 404. Local default true; prod false hasta tener datos.</p>
+      <h4>Historia</h4>
+      <p>Como analista, quiero ver si la mediana subió en 8 semanas.</p>
+      <h4>Before</h4>
+      <p>No hay ruta. Receta hex completa.</p>
+      <h4>After</h4>
+      <pre>GET /api/v1/trims/1/market/history?year=2019
+GET ...?year=2019&amp;from=2026-01-01&amp;to=2026-03-01
+# 200 [{"week_start":"2026-01-06","count":4,"median":25000000}]
+# sin datos: []
+# sin year: 400 INVALID_YEAR
+# HISTORY_ENABLED=false: 404</pre>
+      <p>Wire en router + main. README. Test handler 400.</p>
+      <h4>DoD</h4>
+      <p>Hex completa. <code>[]</code> no null. Flag funciona. README.</p>
+      <h4>No toques</h4>
+      <p>Gráficos. Sparkline (803).</p>
+    </article>
+
+    <article class="card" id="e8-803">
+      <div class="meta"><span class="pill">E8-803</span><span class="pill">5 pts</span><span class="pill">Story</span></div>
+      <h3>Tabla 8 semanas en la ficha</h3>
+      <h4>Before</h4>
+      <p>VehicleSheet no llama history. <code>api.ts</code> no tiene helper.</p>
+      <h4>After</h4>
+      <pre>export function getMarketHistory(trimId: number, year: number) {
+  return fetchJSON(`/api/v1/trims/${trimId}/market/history?year=${year}`);
+}</pre>
+      <p>Si 404 (flag off) o <code>[]</code>: no muestres la sección. Si hay data: tabla HTML semana | mediana | n + disclaimer. Sin chart library.</p>
+      <h4>Verificación</h4>
+      <p>Con flag off: ficha igual que hoy. Con flag on y datos: tabla visible.</p>
+      <h4>DoD</h4>
+      <p>No rompe si history no existe. Disclaimer visible.</p>
+      <h4>No toques</h4>
+      <p>Chart.js / Recharts. Billing premium.</p>
+    </article>
+
+    <article class="card" id="e9-901">
+      <div class="meta"><span class="pill">E9-901</span><span class="pill">2 pts</span><span class="pill chore">Chore</span></div>
+      <h3>Uptime + custom domain runbook</h3>
+      <h4>After</h4>
+      <p>En <code>docs/runbooks/railway.md</code>: ping a web <code>/</code> y API <code>/health</code> (Healthchecks.io / Better Uptime). CNAME del dominio al servicio <strong>web</strong>. El browser no necesita ver la API si el rewrite existe. No implementes el CNAME vos salvo que el PO tenga el DNS.</p>
+      <h4>DoD</h4>
+      <p>Pasos escritos. Cero código de producto.</p>
+      <h4>No toques</h4>
+      <p>Go, Next, DNS prod sin OK del PO.</p>
+    </article>
+
+    <article class="card" id="e9-902">
+      <div class="meta"><span class="pill">E9-902</span><span class="pill">3 pts</span><span class="pill">Story</span></div>
+      <h3>Analytics mínimo</h3>
+      <h4>Glosario</h4>
+      <p><strong>PII:</strong> email, IP a propósito, precio tipeado con DNI, etc. No lo mandes. Eventos: nombre + trim_id + year alcanza.</p>
+      <h4>After</h4>
+      <pre>// web/src/lib/track.ts
+export function track(event: string, props?: Record&lt;string, string | number&gt;) {
+  if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
+    // fetch beacon o plausible
+  }
+}</pre>
+      <p>Llamá desde HomeSearch submit, VehicleSheet mount, DealCalculator submit, compare page. Si no hay cuenta: no-op + README “set NEXT_PUBLIC_ANALYTICS_URL”.</p>
+      <h4>DoD</h4>
+      <p>Stub existe. 4 eventos cableados. README. Sin PII.</p>
+      <h4>No toques</h4>
+      <p>Google Analytics pesado si el PO no lo pidió. Cookies banner.</p>
+    </article>
+
+    <article class="card" id="e9-903">
+      <div class="meta"><span class="pill">E9-903</span><span class="pill">1 pt</span><span class="pill">Story</span></div>
+      <h3><code>DB_MAX_CONNS</code> configurable</h3>
+      <h4>Before</h4>
+      <p class="label-before">cmd/server/main.go</p>
+      <pre>poolCfg.MaxConns = 25</pre>
+      <h4>After</h4>
+      <pre>maxConns := int32(25)
+if v := os.Getenv("DB_MAX_CONNS"); v != "" {
+    n, err := strconv.Atoi(v)
+    if err == nil &amp;&amp; n &gt; 0 {
+        maxConns = int32(n)
+    }
+}
+poolCfg.MaxConns = maxConns</pre>
+      <p>Runbook: hobby Railway 5–10. Default 25 si env vacía o inválida.</p>
+      <h4>DoD</h4>
+      <p>Env funciona. Default 25. Documentado.</p>
+      <h4>No toques</h4>
+      <p>MinConns salvo que el PO pida. Pool tuning extra.</p>
+    </article>
+    <p class="exit"><strong>Sprint 8 exit:</strong> historia detrás de flag; runbook de dominio.</p>
+
+    <h2 id="icebox">Icebox (no sprint)</h2>
+    <ul>
+      <li>Cliente Mercado Libre / Autocosmos (solo si E5-501 = yes).</li>
+      <li>Auth, billing, mobile, Redis, Kafka, ML.</li>
+      <li>Republicar CCA/ACARA.</li>
+      <li>Backoffice (seguir SQL/CSV).</li>
+      <li>Peso 0.7/0.4 de trims lejanos.</li>
+      <li>Unificar API+web en un container.</li>
+    </ul>
+
+    <h2>Calendario (1 dev, sprints de 10d)</h2>
+    <table>
+      <thead><tr><th>Sprint</th><th>Semanas</th><th>Focus</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>1–2</td><td>E1 Honest</td></tr>
+        <tr><td>2</td><td>3–4</td><td>E2 Identity</td></tr>
+        <tr><td>3</td><td>5–6</td><td>E3 Catalog</td></tr>
+        <tr><td>4</td><td>7–8</td><td>E4 Worker + catálogo resto</td></tr>
+        <tr><td>5</td><td>9–10</td><td>E5 Legal + seed vs live</td></tr>
+        <tr><td>6</td><td>11–12</td><td>E6 km + E7 compare search</td></tr>
+        <tr><td>7</td><td>13–14</td><td>E6 fallback + ficha</td></tr>
+        <tr><td>8</td><td>15–16</td><td>E8 history + E9 operate</td></tr>
+      </tbody>
+    </table>
+    <p>~16 semanas de calendario. Con agentes, Sprint 1–2 y 6–7 se comprimen; 3 y 5 no.</p>
+
+    <h2>Ritual</h2>
+    <ol>
+      <li><strong>Planning:</strong> no más de 21 pts. Partí E3-302 en 302a/b si asusta.</li>
+      <li><strong>Daily:</strong> bloqueo &gt;2 h → review, no “seguir investigando”.</li>
+      <li><strong>Review:</strong> demo en domain web, no en la URL de la API.</li>
+      <li><strong>Retro:</strong> card sin AC medible se reescribe, no se “completa a medias”.</li>
+    </ol>
+  </main>
+  <footer>
+    <p>Plantilla junior. No implementa el producto. Grafos: Graphviz WASM, red la primera vez. Abrí el archivo en el browser.</p>
+  </footer>
+
+  <script type="module">
+    import { instance } from "https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/+esm";
+
+    const common = `
+      graph [bgcolor="transparent", fontname="Helvetica,Arial,sans-serif", fontsize=12];
+      node [fontname="Helvetica,Arial,sans-serif", fontsize=11, shape=box, style="rounded,filled", fillcolor="#ecfdf5", color="#047857"];
+      edge [color="#71717a", arrowsize=0.7];
+    `;
+
+    const dots = {
+      "g-epics": `
+        digraph epics {
+          ${common}
+          rankdir=LR;
+          pad=0.3;
+          E1 [label="E1 HonestDemo", URL="#s1"];
+          E2 [label="E2 Identity", URL="#s2"];
+          E3 [label="E3 Catalog", URL="#s3"];
+          E4 [label="E4 Ingest", URL="#s4"];
+          E5 [label="E5 SourcePolicy", URL="#s5"];
+          E6 [label="E6 DealQuality", URL="#s6"];
+          E7 [label="E7 CompareSheet", URL="#s6"];
+          E8 [label="E8 History", URL="#s8"];
+          E9 [label="E9 Operate", URL="#s8"];
+          E1 -> E2;
+          E2 -> E3;
+          E2 -> E4;
+          E3 -> E4;
+          E4 -> E5;
+          E5 -> E6;
+          E1 -> E6;
+          E3 -> E7;
+          E4 -> E8;
+          E5 -> E8;
+          E1 -> E9;
+        }`,
+      "g-sprints": `
+        digraph sprints {
+          ${common}
+          rankdir=TB;
+          newrank=true;
+          pad=0.2;
+          nodesep=0.25;
+          ranksep=0.45;
+          node [fontsize=10, fillcolor="#fff", color="#a1a1aa"];
+          subgraph cluster_s1 {
+            label="Sprint 1 · E1 Honest · 12 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e1101 [label="E1-101 N=5 (3)", URL="#e1-101", fillcolor="#ecfdf5", color="#047857"];
+            e1102 [label="E1-102 disclaimer (2)", URL="#e1-102"];
+            e1103 [label="E1-103 home (3)", URL="#e1-103"];
+            e1104 [label="E1-104 empty (2)", URL="#e1-104"];
+            e1105 [label="E1-105 meta (1)", URL="#e1-105"];
+            e1106 [label="E1-106 railway (1)", URL="#e1-106"];
+          }
+          subgraph cluster_s2 {
+            label="Sprint 2 · E2 Identity · 15 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e2201 [label="E2-201 aliases (5)", URL="#e2-201", fillcolor="#ecfdf5", color="#047857"];
+            e2202 [label="E2-202 normalize (3)", URL="#e2-202"];
+            e2203 [label="E2-203 resolve (5)", URL="#e2-203"];
+            e2204 [label="E2-204 variants (2)", URL="#e2-204"];
+            e2201 -> e2202 -> e2203 -> e2204;
+          }
+          subgraph cluster_s3 {
+            label="Sprint 3 · E3 Catalog · 19 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e3301 [label="E3-301 check (3)", URL="#e3-301"];
+            e3302 [label="E3-302 Toyota (8)", URL="#e3-302"];
+            e3303 [label="E3-303 VW+Fiat (8)", URL="#e3-303"];
+            e3301 -> e3302 -> e3303;
+          }
+          subgraph cluster_s4 {
+            label="Sprint 4 · E4 Ingest · 13 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e4401 [label="E4-401 Dockerfile (3)", URL="#e4-401"];
+            e4402 [label="E4-402 fields (3)", URL="#e4-402"];
+            e4403 [label="E4-403 expire (5)", URL="#e4-403"];
+            e4404 [label="E4-404 dry-run (2)", URL="#e4-404"];
+            e2203 -> e4402;
+            e4402 -> e4403;
+          }
+          subgraph cluster_s5 {
+            label="Sprint 5 · E5 Policy · 14 pts";
+            style="rounded,filled"; fillcolor="#fefce8"; color="#eab308";
+            e5501 [label="E5-501 legal (5)", URL="#e5-501", fillcolor="#fef9c3", color="#a16207"];
+            e5502 [label="E5-502 exclude seed (5)", URL="#e5-502"];
+            e5503 [label="E5-503 badge (3)", URL="#e5-503"];
+            e5504 [label="E5-504 runbook (1)", URL="#e5-504"];
+          }
+          subgraph cluster_s6 {
+            label="Sprint 6 · km + compare · 16 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e6601 [label="E6-601 km filter (8)", URL="#e6-601"];
+            e7701 [label="E7-701 compare search (5)", URL="#e7-701"];
+            e7702 [label="E7-702 year edge (3)", URL="#e7-702"];
+          }
+          subgraph cluster_s7 {
+            label="Sprint 7 · fallback + ficha · 13 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e6602 [label="E6-602 ±1 year (8)", URL="#e6-602"];
+            e7703 [label="E7-703 sections (3)", URL="#e7-703"];
+            e7704 [label="E7-704 deeplink (2)", URL="#e7-704"];
+            e1101 -> e6602;
+          }
+          subgraph cluster_s8 {
+            label="Sprint 8 · history + operate · 21 pts";
+            style="rounded,filled"; fillcolor="#f4f4f5"; color="#d4d4d8";
+            e8801 [label="E8-801 observations (5)", URL="#e8-801"];
+            e8802 [label="E8-802 history API (5)", URL="#e8-802"];
+            e8803 [label="E8-803 table UI (5)", URL="#e8-803"];
+            e9901 [label="E9-901 domain (2)", URL="#e9-901"];
+            e9902 [label="E9-902 analytics (3)", URL="#e9-902"];
+            e9903 [label="E9-903 maxconns (1)", URL="#e9-903"];
+            e8801 -> e8802 -> e8803;
+          }
+        }`,
+      "g-hex": `
+        digraph hex {
+          ${common}
+          rankdir=LR;
+          pad=0.3;
+          node [fillcolor="#fff"];
+          port [label="1. domain/ports.go"];
+          sql [label="2. infrastructure/postgres"];
+          uc [label="3. application/ use case"];
+          http [label="4. delivery/http"];
+          main [label="5. cmd/server/main.go"];
+          test [label="6. go test paquete"];
+          port -> sql -> uc -> http -> main -> test;
+        }`,
+    };
+
+    const viz = await instance();
+    for (const [id, dot] of Object.entries(dots)) {
+      const el = document.getElementById(id);
+      try {
+        el.appendChild(viz.renderSVGElement(dot));
+      } catch (err) {
+        el.innerHTML = `<p class="graph-error">Graphviz: ${String(err)}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
