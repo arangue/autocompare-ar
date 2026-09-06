@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { HomeSearch } from "@/components/HomeSearch";
 
 export default function Home() {
@@ -15,6 +17,21 @@ export default function Home() {
             ¿Está barato? Compará el precio publicado con el mercado real y las
             referencias oficiales antes de comprar.
           </p>
+          <p className="mt-4 text-sm text-zinc-500">
+            Esto no es un clasificado. Son ejemplos del catálogo de demostración.
+          </p>
+          {/* seed ids from migrations/002 */}
+          <ul className="mt-6 space-y-2 text-emerald-800">
+            <li>
+              <Link href="/trims/1?year=2019">Corolla XEi 2.0 CVT 2019</Link>
+            </li>
+            <li>
+              <Link href="/trims/2?year=2019">Corolla XLi 1.8 CVT 2019</Link>
+            </li>
+            <li>
+              <Link href="/trims/4?year=2019">Golf Comfortline 2019</Link>
+            </li>
+          </ul>
         </div>
 
         <HomeSearch />

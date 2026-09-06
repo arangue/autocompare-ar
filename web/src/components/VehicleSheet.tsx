@@ -212,7 +212,16 @@ export function VehicleSheet() {
   }
 
   if (!trim || year == null) {
-    return null;
+    return (
+      <main className="mx-auto w-full max-w-3xl px-6 py-16">
+        <Link href="/" className="text-sm font-medium text-emerald-700 hover:underline">
+          ← Volver a buscar
+        </Link>
+        <p className="mt-8 text-zinc-600">
+          {error ?? "No pudimos cargar la versión. ¿Está el servidor API en marcha?"}
+        </p>
+      </main>
+    );
   }
 
   const years = yearOptions(trim.year_from, trim.year_to);
