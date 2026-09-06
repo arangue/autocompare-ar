@@ -319,6 +319,11 @@ export function VehicleSheet() {
           loading={dealLoading}
         />
 
+        <p className="text-sm text-zinc-600">
+          {deal?.disclaimer ??
+            "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta. Catálogo de demostración."}
+        </p>
+
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Referencias
