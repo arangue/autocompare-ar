@@ -145,7 +145,7 @@ export function VehicleSheet() {
           setNotFound(true);
           return;
         }
-        setError("No pudimos cargar la versión. ¿Está el servidor API en marcha?");
+        setError("No pudimos cargar esta versión.");
       })
       .finally(() => {
         if (!cancelled) {
@@ -218,7 +218,7 @@ export function VehicleSheet() {
           ← Volver a buscar
         </Link>
         <p className="mt-8 text-zinc-600">
-          {error ?? "No pudimos cargar la versión. ¿Está el servidor API en marcha?"}
+          {error ?? "No pudimos cargar esta versión."}
         </p>
       </main>
     );
@@ -369,11 +369,11 @@ export function VehicleSheet() {
           )}
         </section>
 
-        {trim.specs ? (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Ficha técnica
-            </h2>
+        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            Ficha técnica
+          </h2>
+          {trim.specs ? (
             <dl className="mt-4 grid gap-3 sm:grid-cols-2">
               <div>
                 <dt className="text-sm text-zinc-500">Motor</dt>
@@ -394,14 +394,18 @@ export function VehicleSheet() {
                 </div>
               ) : null}
             </dl>
-          </section>
-        ) : null}
+          ) : (
+            <p className="mt-4 text-sm text-zinc-600">
+              Ficha técnica no cargada para esta versión.
+            </p>
+          )}
+        </section>
 
-        {featuresByCategory.size > 0 ? (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              Equipamiento
-            </h2>
+        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            Equipamiento
+          </h2>
+          {featuresByCategory.size > 0 ? (
             <div className="mt-4 space-y-4">
               {[...featuresByCategory.entries()].map(([category, features]) => (
                 <div key={category}>
@@ -417,8 +421,12 @@ export function VehicleSheet() {
                 </div>
               ))}
             </div>
-          </section>
-        ) : null}
+          ) : (
+            <p className="mt-4 text-sm text-zinc-600">
+              Sin equipamiento cargado.
+            </p>
+          )}
+        </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
