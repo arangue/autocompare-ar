@@ -18,7 +18,7 @@ The hero feature is deal assessment: given a published price, show how it sits a
 
 MVP focus: a small catalog, market summary per trim/year, and a clear “is it cheap?” signal. No login, mobile app, microservices, or ML in v1.
 
-Full product and architecture design (target, not all built yet): [DESIGN.md](DESIGN.md).
+Full product and architecture design (target, not all built yet): [DESIGN.md](DESIGN.md). Production deploy: [docs/runbooks/railway.md](docs/runbooks/railway.md).
 
 ## API
 
