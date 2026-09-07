@@ -4,6 +4,8 @@ import { ApiError, getCompare } from "@/lib/api";
 import { formatARSCompact } from "@/lib/format";
 import type { CompareTrim } from "@/lib/types";
 
+export const metadata = { title: "Comparar | AutoCompare" };
+
 function queryValue(value: string | string[] | undefined): string {
   if (Array.isArray(value)) {
     return value[0] ?? "";

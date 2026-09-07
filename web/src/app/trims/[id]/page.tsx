@@ -2,6 +2,8 @@ import { Suspense } from "react";
 
 import { VehicleSheet } from "@/components/VehicleSheet";
 
+export const metadata = { title: "Versión | AutoCompare" };
+
 export default function TrimPage() {
   return (
     <Suspense

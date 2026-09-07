@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AutoCompare",
   description:
-    "Compará precios de autos usados en Argentina y sabé si una publicación está barata.",
+    "Herramienta para saber si un usado en Argentina está barato. No es un clasificado.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
