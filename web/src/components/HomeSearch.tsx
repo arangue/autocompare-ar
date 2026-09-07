@@ -52,7 +52,7 @@ export function HomeSearch() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("No pudimos buscar versiones. ¿Está el servidor API en marcha?");
+        setError("No pudimos buscar versiones.");
       }
     } finally {
       setLoading(false);
