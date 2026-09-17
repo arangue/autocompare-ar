@@ -1,8 +1,8 @@
 # AutoCompare AR — Design Document
 
-Exported from the product/architecture design conversations for `autocompare-ar`.
+Product and architecture design for AutoCompare AR: core idea, data sources, MVP scope, stack, data model, features, risks, and the clean / hexagonal layout used in this repo.
 
-This document captures the **core idea**, **data sources**, **MVP scope**, **tech recommendations**, **data model**, **product features**, **risks**, **build order**, and the **clean / hexagonal architecture** used in the repo.
+This is the **target** design. The repo currently implements a slice of it (seeded catalog, market summary, deal assessment, compare, and a Next.js UI). Live listing sources are still out of scope.
 
 ---
 
@@ -649,26 +649,22 @@ curl http://localhost:8080/api/v1/brands
 
 ---
 
-## 14. Sources / provenance
+## 14. Research notes
 
-Product design synthesized from:
-
-- Shared ChatGPT design thread: **“Diseñar MVP cotizaciones autos”**  
-  (`https://chatgpt.com/s/t_6a838f4190e08191bc163bca724b3618`)
-- Follow-up decisions in this Cursor conversation:
-  - stack = Go API + React/Next.js + PostgreSQL
-  - architecture = clean / hexagonal (wallet-service style)
-  - handlers in `internal/delivery/http/`
-  - composition root in `cmd/server/main.go`
-  - start with catalog migration + seed + ListBrands
-
-External references discussed in the design chat (for research / validation, not copied wholesale):
+External sources used to validate the product (not copied wholesale):
 
 - CCA price guides
 - ACARA official price guide
 - DNRPA valuation tables (fiscal/registral)
 - Autocosmos listings / tech sheets
 - Mercado Libre Developers vehicle docs
+
+Architecture choices for this repo:
+
+- Stack: Go API + Next.js + PostgreSQL
+- Clean / hexagonal layout
+- HTTP handlers in `internal/delivery/http/`
+- Composition root in `cmd/server/main.go`
 
 ---
 
