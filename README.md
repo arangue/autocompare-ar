@@ -1,6 +1,10 @@
 # autocompare-ar
 
+Work in progress. Personal project: help buyers in Argentina tell if a used-car listing is cheap vs the market.
+
 Tool for deciding whether a used car in Argentina is a good deal — not just another car search.
+
+**Today:** catalog search, trim detail, market summary, reference prices, deal assessment, and compare work locally on **seeded data**. Live classifieds ingest (Mercado Libre, Autocosmos, etc.) is not wired up yet.
 
 ## Goal
 
@@ -10,11 +14,11 @@ Help buyers answer three questions:
 2. **What does that trim actually include** (airbags, ABS, ESP, brakes, engine, etc.)?
 3. **Is this listing cheap or expensive** relative to comparable cars?
 
-The hero feature is deal assessment: given a published price, show how it sits against the market (e.g. “15% below median”). Reference guides (CCA, ACARA, DNRPA) and live listings (Mercado Libre, Autocosmos, etc.) feed that estimate — they are inputs, not the product.
+The hero feature is deal assessment: given a published price, show how it sits against the market (e.g. “15% below median”). Reference guides (CCA, ACARA, DNRPA) and listing prices feed that estimate — they are inputs, not the product.
 
 MVP focus: a small catalog, market summary per trim/year, and a clear “is it cheap?” signal. No login, mobile app, microservices, or ML in v1.
 
-Full product and architecture design: [DESIGN.md](DESIGN.md).
+Full product and architecture design (target, not all built yet): [DESIGN.md](DESIGN.md).
 
 ## API
 
