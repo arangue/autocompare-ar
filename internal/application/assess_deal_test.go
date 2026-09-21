@@ -109,7 +109,7 @@ func TestAssessDeal_aboveMedian(t *testing.T) {
 
 func TestAssessDeal_fallbackWithoutPercentiles(t *testing.T) {
 	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{
-		Count:  2,
+		Count:  5,
 		Median: int64Ptr(20_000_000),
 	}})
 
