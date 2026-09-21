@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AutoCompare AR — Post-MVP board</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --ink: #172b4d;
+      --muted: #5e6c84;
+      --line: #dfe1e6;
+      --card: #fff;
+      --accent: #0052cc;
+      --done: #006644;
+      --done-bg: #e3fcef;
+      --todo: #5e6c84;
+      --todo-bg: #dfe1e6;
+      --be: #0747a6;
+      --be-bg: #deebff;
+      --fs: #5243aa;
+      --fs-bg: #ede9fe;
+      --docs: #42526e;
+      --docs-bg: #f4f5f7;
+      --story: #0052cc;
+      --chore: #5e6c84;
+      --overlay: rgba(9, 30, 66, 0.54);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      background: #091e42;
+      color: #fff;
+      padding: 1.1rem 1.25rem 0.95rem;
+    }
+    header .wrap { max-width: 96rem; margin: 0 auto; }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.25rem; font-weight: 600; }
+    header p { margin: 0; color: #b3bac5; font-size: 0.85rem; }
+    header a { color: #4c9aff; }
+    .toolbar {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 0.65rem 1.25rem;
+      position: sticky; top: 0; z-index: 3;
+    }
+    .toolbar .wrap {
+      max-width: 96rem; margin: 0 auto;
+      display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+    }
+    .toolbar button {
+      font: inherit; font-size: 0.78rem; font-weight: 600;
+      border: 1px solid var(--line); background: #fff; border-radius: 3px;
+      padding: 0.28rem 0.6rem; cursor: pointer; color: var(--ink);
+    }
+    .toolbar button.active { background: #deebff; border-color: #4c9aff; color: var(--accent); }
+    .stats { display: flex; gap: 1rem; margin-left: auto; font-size: 0.78rem; color: var(--muted); }
+    .stats b { color: var(--ink); }
+    main { max-width: 96rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+    h2 { font-size: 0.95rem; margin: 1.25rem 0 0.5rem; color: var(--muted); font-weight: 600; }
+    .muted { color: var(--muted); }
+    .graph-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 900px) { .graph-row { grid-template-columns: 1fr; } }
+    .graph-panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0.7rem 0.85rem;
+      overflow-x: auto;
+    }
+    .graph-panel h3 { margin: 0 0 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .graph-panel svg { max-width: 100%; height: auto; display: block; }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(15.5rem, 1fr));
+      gap: 0.65rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    .col {
+      background: #ebecf0;
+      border-radius: 3px;
+      min-width: 15.5rem;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 8rem);
+    }
+    .col-head {
+      padding: 0.65rem 0.7rem 0.4rem;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .col-head span { font-weight: 600; text-transform: none; letter-spacing: 0; }
+    .col-body { overflow-y: auto; padding: 0 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .issue {
+      background: #fff;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      box-shadow: 0 1px 1px rgba(9, 30, 66, 0.13);
+      padding: 0.55rem 0.6rem 0.5rem;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      width: 100%;
+    }
+    .issue:hover { background: #fafbfc; }
+    .issue:focus { outline: 2px solid #4c9aff; outline-offset: 0; }
+    .issue.is-open { outline: 2px solid var(--accent); }
+    .issue.is-hidden { display: none; }
+    .issue .sum { font-weight: 500; font-size: 0.86rem; margin: 0 0 0.4rem; }
+    .issue .row {
+      display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
+    }
+    .loz {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+      padding: 0.08rem 0.35rem; border-radius: 3px; text-transform: uppercase;
+    }
+    .loz.todo { background: var(--todo-bg); color: var(--todo); }
+    .loz.done { background: var(--done-bg); color: var(--done); }
+    .loz.story { background: var(--be-bg); color: var(--story); }
+    .loz.spike { background: #fff0b3; color: #172b4d; }
+    .loz.chore { background: var(--docs-bg); color: var(--chore); }
+    .loz.backend { background: var(--be-bg); color: var(--be); }
+    .loz.frontend { background: #fce7f3; color: #9d174d; }
+    .loz.fullstack { background: var(--fs-bg); color: var(--fs); }
+    .loz.docs { background: var(--docs-bg); color: var(--docs); }
+    .key { font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-right: auto; }
+    .pts {
+      font-size: 0.68rem; font-weight: 700;
+      min-width: 1.25rem; height: 1.25rem;
+      border-radius: 999px; border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--muted);
+    }
+    .drawer {
+      position: fixed; inset: 0; z-index: 10;
+      display: none;
+    }
+    .drawer.open { display: block; }
+    .drawer-bg { position: absolute; inset: 0; background: var(--overlay); }
+    .panel {
+      position: absolute; top: 0; right: 0; height: 100%;
+      width: min(40rem, 100%);
+      background: #fff;
+      box-shadow: -8px 0 24px rgba(9, 30, 66, 0.18);
+      overflow-y: auto;
+      padding: 1.1rem 1.25rem 2rem;
+    }
+    .panel-top { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+    .panel-top .key { font-size: 0.8rem; color: var(--accent); }
+    .close {
+      font: inherit; border: 1px solid var(--line); background: #fff;
+      border-radius: 3px; padding: 0.25rem 0.55rem; cursor: pointer;
+    }
+    .panel h2 { color: var(--ink); font-size: 1.2rem; margin: 0.35rem 0 0.75rem; text-transform: none; letter-spacing: 0; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr;
+      gap: 0.35rem 0.6rem;
+      font-size: 0.85rem;
+      margin: 0 0 1rem;
+      padding: 0.7rem 0.8rem;
+      background: #f4f5f7;
+      border-radius: 3px;
+    }
+    .meta-grid dt { color: var(--muted); font-weight: 600; }
+    .meta-grid dd { margin: 0; }
+    .panel h3 {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); margin: 1rem 0 0.35rem;
+    }
+    .panel p, .panel li { font-size: 0.9rem; }
+    .panel ul { margin: 0.2rem 0 0; padding-left: 1.15rem; }
+    .ac li { list-style: none; margin-left: -1.15rem; padding-left: 1.35rem; position: relative; }
+    .ac li::before {
+      content: "";
+      position: absolute; left: 0; top: 0.28rem;
+      width: 0.85rem; height: 0.85rem;
+      border: 2px solid #dfe1e6; border-radius: 2px; background: #fff;
+    }
+    .panel a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .panel a:hover { text-decoration: underline; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
+    .box { background: #f4f5f7; border-radius: 3px; padding: 0.55rem 0.7rem; }
+    .files { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; }
+    .ice { background: #fff; border: 1px solid var(--line); border-radius: 3px; padding: 0.7rem 0.9rem; }
+    footer { padding: 1rem 1.25rem 2rem; color: var(--muted); font-size: 0.8rem; max-width: 96rem; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p>AutoCompare AR · post-MVP</p>
+      <h1>Board de tickets</h1>
+      <p>Un ticket = un PR. Tutorial junior (pasos, tests copy-paste): <a href="agile-roadmap.html">agile-roadmap.html</a>. Este board no implementa código.</p>
+    </div>
+  </header>
+  <div class="toolbar">
+    <div class="wrap">
+      <button type="button" class="active" data-filter="all">Todos</button>
+      <button type="button" data-filter="todo">To do</button>
+      <button type="button" data-filter="done">Done</button>
+      <button type="button" data-filter="backend">Backend</button>
+      <button type="button" data-filter="frontend">Frontend</button>
+      <button type="button" data-filter="fullstack">Fullstack</button>
+      <button type="button" data-filter="docs">Docs</button>
+      <div class="stats">
+        <span><b id="n-todo">0</b> to do</span>
+        <span><b id="n-done">0</b> done</span>
+        <span><b id="n-pts">0</b> pts abiertos</span>
+      </div>
+    </div>
+  </div>
+  <main>
+    <h2>Dependencias</h2>
+    <div class="graph-row">
+      <div class="graph-panel"><h3>Epics</h3><div id="g-epics"></div></div>
+      <div class="graph-panel"><h3>Calendario (sprints 10d · 1 dev)</h3><div id="g-cal"></div></div>
+    </div>
+
+    <h2>Backlog por sprint</h2>
+    <p class="muted" style="margin-top:0">Click en una card para abrir el issue. S1 está Done salvo E1-107. Próxima: E2-203.</p>
+    <div class="board" id="board"></div>
+
+    <h2 id="icebox">Icebox</h2>
+    <div class="ice">
+      <ul>
+        <li>Cliente Mercado Libre / Autocosmos (solo si E5-501 = yes)</li>
+        <li>Auth, billing, mobile, Redis, Kafka, ML</li>
+        <li>Republicar CCA/ACARA · backoffice · peso 0.7/0.4 · unificar API+web</li>
+      </ul>
+    </div>
+  </main>
+  <footer>Board de asignación. Grafos: Graphviz WASM, red la primera vez.</footer>
+
+  <div class="drawer" id="drawer" hidden>
+    <div class="drawer-bg" id="drawer-bg"></div>
+    <aside class="panel" id="panel"></aside>
+  </div>
+
+  <script>
+    const TICKETS = [
+      {
+        key: "E1-101", sprint: "S1", type: "Story", status: "done", points: 3, layer: "backend", priority: "P0",
+        summary: "Umbral mínimo de 5 listings para el deal",
+        description: "Como comprador, no quiero un badge verde si hay menos de 5 publicaciones.",
+        ship: "DealMinSampleSize = 5 → insufficient_data",
+        blockedBy: [], blocks: ["E6-602"],
+        scopeIn: ["Constante en domain/deal.go", "If en AssessDeal", "Tests count 4 / 5", "README /deal"],
+        scopeOut: ["UI (ya pinta insufficient_data)", "SQL"],
+        files: ["internal/domain/deal.go", "internal/application/assess_deal.go", "internal/application/assess_deal_test.go", "README.md"],
+        ac: ["Count 4 + mediana → insufficient_data", "Count 5 → ok", "Deltas null cuando insufficient"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E1-102", sprint: "S1", type: "Story", status: "done", points: 2, layer: "frontend", priority: "P1",
+        summary: "Disclaimer siempre visible en ficha y footer",
+        description: "Como visitante, quiero ver que esto es una estimación y un catálogo de demo.",
+        ship: "Footer global + párrafo bajo DealCalculator",
+        blockedBy: [], blocks: [],
+        scopeIn: ["web/src/app/layout.tsx", "VehicleSheet.tsx"],
+        scopeOut: ["Go", "i18n", "modal", "cookies"],
+        files: ["web/src/app/layout.tsx", "web/src/components/VehicleSheet.tsx"],
+        ac: ["Home, ficha y compare muestran footer", "Ficha: disclaimer fuera del badge"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E1-103", sprint: "S1", type: "Story", status: "done", points: 3, layer: "frontend", priority: "P1",
+        summary: "Atajos en el home",
+        description: "Como visitante que no sabe qué buscar, quiero 3 ejemplos clickeables.",
+        ship: "Links a XEi / XLi / Golf Comfortline 2019",
+        blockedBy: [], blocks: [],
+        scopeIn: ["web/src/app/page.tsx"],
+        scopeOut: ["Autocomplete", "Go"],
+        files: ["web/src/app/page.tsx"],
+        ac: ["3 links visibles 375 y 1280", "Navegan a la ficha correcta", "Search intacto"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E1-104", sprint: "S1", type: "Story", status: "done", points: 2, layer: "frontend", priority: "P1",
+        summary: "Empty states de specs y equipamiento",
+        description: "Como usuario de un trim sin ficha técnica, quiero leer “no está cargada”, no un hueco.",
+        ship: "Secciones siempre visibles en VehicleSheet",
+        blockedBy: [], blocks: [],
+        scopeIn: ["VehicleSheet.tsx specs + features"],
+        scopeOut: ["Skeletons", "API"],
+        files: ["web/src/components/VehicleSheet.tsx"],
+        ac: ["Specs null y features vacías muestran párrafo", "XEi 2019 no perdió la ficha"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E1-105", sprint: "S1", type: "Story", status: "done", points: 1, layer: "frontend", priority: "P2",
+        summary: "Metadata / title por página",
+        description: "Como usuario con 10 tabs, quiero distinguir Home / Versión / Comparar.",
+        ship: "export const metadata en layout, trim page, compare page",
+        blockedBy: [], blocks: [],
+        scopeIn: ["layout.tsx", "trims/[id]/page.tsx", "compare/page.tsx"],
+        scopeOut: ["OG images", "sitemap", "favicon"],
+        files: ["web/src/app/layout.tsx", "web/src/app/trims/[id]/page.tsx", "web/src/app/compare/page.tsx"],
+        ac: ["Tres titles distintos", "Description menciona no clasificado"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E1-106", sprint: "S1", type: "Chore", status: "done", points: 1, layer: "docs", priority: "P2",
+        summary: "Checklist Railway",
+        description: "Como junior que no estuvo en el primer deploy, quiero una lista para no repetir container exited.",
+        ship: "docs/runbooks/railway.md",
+        blockedBy: [], blocks: ["E5-504", "E9-901"],
+        scopeIn: ["3 servicios, vars, health, domain API≠web, exited"],
+        scopeOut: ["Código", "Dockerfiles"],
+        files: ["docs/runbooks/railway.md"],
+        ac: ["Archivo cubre servicios, vars, health, exited"],
+        dod: ["Ya en el repo. E5-504 y E9-901 lo extienden."]
+      },
+      {
+        key: "E1-107", sprint: "S1", type: "Chore", status: "todo", points: 0, layer: "backend", priority: "P0",
+        summary: "Test stale: fallbackWithoutPercentiles Count ≥ 5",
+        description: "TestAssessDeal_fallbackWithoutPercentiles usa Count: 2. Con N=5 cae en insufficient_data. No es el fallback ±1 año (E6-602).",
+        ship: "Subir Count a >= 5 en ese test (path sin p25/p75)",
+        blockedBy: ["E1-101"], blocks: [],
+        scopeIn: ["internal/application/assess_deal_test.go"],
+        scopeOut: ["classifyDealBand", "AssessDeal production code"],
+        files: ["internal/application/assess_deal_test.go"],
+        ac: ["go test ./internal/application/ -count=1 verde", "El test sigue cubriendo mediana sin percentiles"],
+        dod: ["Primer PR backend. Diff mínimo."]
+      },
+      {
+        key: "E2-201", sprint: "S2", type: "Story", status: "done", points: 5, layer: "backend", priority: "P0",
+        summary: "Migración trim_aliases",
+        description: "Como el worker futuro, necesito una tabla que diga “este texto crudo = este trim_id”.",
+        ship: "Tabla unique (source, raw_name) + 3 aliases XEi",
+        blockedBy: [], blocks: ["E2-202"],
+        scopeIn: ["migrations/006_create_trim_aliases.up.sql + down"],
+        scopeOut: ["Worker", "fs.go", "resolver títulos"],
+        files: ["migrations/006_create_trim_aliases.up.sql", "migrations/006_create_trim_aliases.down.sql"],
+        ac: ["Up aplica", "Unique viola al duplicar", "Down dropea"],
+        dod: ["Ya en el repo. NO crear 006 de nuevo. Seed extra → E2-204 como 007."]
+      },
+      {
+        key: "E2-202", sprint: "S2", type: "Story", status: "done", points: 3, layer: "backend", priority: "P0",
+        summary: "Normalizer de títulos",
+        description: "Como el matcher, quiero comparar manzanas con manzanas (mayúsculas, tildes, espacios). Horas, no un sprint.",
+        ship: "normalize.Title(string) string → TOYOTA COROLLA XEI 2.0 CVT",
+        blockedBy: ["E2-201"], blocks: ["E2-203"],
+        scopeIn: ["paquete ingestion/normalize/", "stdlib: Fields, ToUpper, NewReplacer"],
+        scopeOut: ["Worker", "HTTP", "SQL", "fuzzy"],
+        files: ["internal/infrastructure/ingestion/normalize/normalize.go", "internal/infrastructure/ingestion/normalize/normalize_test.go"],
+        ac: ["\"toyota  corolla   xei 2.0 cvt\" → TOYOTA COROLLA XEI 2.0 CVT", "\"  Corolla XEi  \" → COROLLA XEI", "\"Año\" → ANO", "≥8 casos (tilde, ñ, tabs)", "Cero imports net/http o pgx"],
+        dod: ["Ya en el repo. No rehacer."]
+      },
+      {
+        key: "E2-203", sprint: "S2", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P0",
+        summary: "Resolver trim_id desde raw_title",
+        description: "Como operador, quiero dropear un JSON de títulos de ML sin saber IDs internos.",
+        ship: "Worker: trim_id opcional + AliasRepository.Resolve; miss → skip + warn, exit 0",
+        blockedBy: ["E2-202"], blocks: ["E2-204", "E4-402", "E4-404"],
+        scopeIn: ["Port Resolve(ctx, source, raw)", "SQL SELECT trim_id FROM trim_aliases", "fileRow.RawTitle", "Loop worker si TrimID==0"],
+        scopeOut: ["Levenshtein", "Crear trims on the fly", "HTTP", "pgx en file_listings.go"],
+        files: ["internal/domain/ports.go", "internal/infrastructure/postgres/alias_repository.go", "internal/infrastructure/ingestion/file_listings.go", "cmd/worker/main.go"],
+        ac: ["Alias seed + \"Toyota Corolla XEI 2.0 CVT\" → upsert trim 1", "Título basura → skipped++, exit 0", "JSON con trim_id numérico sigue igual", "go build ./cmd/worker"],
+        dod: ["go test ./internal/infrastructure/ingestion/"]
+      },
+      {
+        key: "E2-204", sprint: "S2", type: "Story", status: "todo", points: 2, layer: "backend", priority: "P1",
+        summary: "Tests de 15 variantes reales",
+        description: "Como reviewer, quiero 15 casos escritos para no romper el matcher en silencio.",
+        ship: "Tabla-driven, 0 red. Expandir aliases con 007 si hace falta.",
+        blockedBy: ["E2-203"], blocks: ["E3-301"],
+        scopeIn: ["normalize_test.go y/o alias_resolve_test.go", "opcional migrations/007_seed_trim_aliases_expand.up.sql"],
+        scopeOut: ["Scrapers", "HTTP", "Railway"],
+        files: ["internal/infrastructure/ingestion/normalize/normalize_test.go"],
+        ac: ["15 casos", "≥10 resuelven a XEi", "5 pueden ser no-match", "0 llamadas de red"],
+        dod: ["Sprint 2 exit: JSON de títulos carga Corolla y skipea basura"]
+      },
+      {
+        key: "E3-301", sprint: "S3", type: "Story", status: "todo", points: 3, layer: "backend", priority: "P1",
+        summary: "Validador de catálogo",
+        description: "Como reviewer, no quiero mergear SQL con year_from > year_to o name vacío.",
+        ship: "make catalog-check (query contra DB local)",
+        blockedBy: [], blocks: ["E3-302"],
+        scopeIn: ["Test Go + Makefile. Requiere make db-up"],
+        scopeOut: ["Parser SQL completo", "CI GitHub (no blocker)"],
+        files: ["internal/infrastructure/postgres/", "Makefile"],
+        ac: ["Check rojo con fixture roto", "Verde en seed actual", "Target en Makefile"],
+        dod: ["No parsear SQL a mano"]
+      },
+      {
+        key: "E3-302", sprint: "S3", type: "Story", status: "todo", points: 8, layer: "backend", priority: "P1",
+        summary: "Completar Toyota (+8 trims)",
+        description: "Como usuario, buscar hilux tiene que devolver ficha con motor, aunque deal diga sin datos.",
+        ship: "Migración seed. 0 vehicle_listings nuevos. Partir 302a Hilux / 302b resto si asusta.",
+        blockedBy: ["E3-301"], blocks: ["E3-303"],
+        scopeIn: ["Hilux SR 2.8 TDI 4x2 + SRX 2.8 TDI 4x4", "SW4 SRX 2.8 TDI", "Etios XLS 1.5 + Platinum 1.5", "Yaris XLS 1.5", "Corolla Cross XEI 2.0 + SEG 2.0", "specs + ABS/ESP/airbags"],
+        scopeOut: ["Listings seed", "Precios CCA", "Worker"],
+        files: ["migrations/00N_seed_toyota_expand.up.sql", "migrations/00N_seed_toyota_expand.down.sql"],
+        ac: ["curl search?q=hilux no []", "Ficha muestra motor", "GET /deal → insufficient_data", "0 filas nuevas en vehicle_listings", "Down no rompe FKs", "make catalog-check verde"],
+        dod: ["No reinsertar brand Toyota. Si 007 lo usó E2-204, esta es 008."]
+      },
+      {
+        key: "E3-303", sprint: "S3", type: "Story", status: "todo", points: 8, layer: "backend", priority: "P2",
+        summary: "VW + Fiat de volumen",
+        description: "Search de Gol/Polo/Amarok/Toro/Pulse debe devolver ficha + specs. Cronos y Golf Comfortline ya existen.",
+        ship: "Migración seed. 0 listings. Si no entra, PO mueve a S4: catálogo > worker.",
+        blockedBy: ["E3-302"], blocks: [],
+        scopeIn: ["Gol Trendline", "Polo Comfortline", "Amarok Comfortline + Highline", "Toro Freedom 1.8", "Pulse Drive 1.3"],
+        scopeOut: ["Reinsertar Golf Comfortline o Cronos Drive 1.3", "Precios guía masivos"],
+        files: ["migrations/00N_seed_vw_fiat_expand.up.sql"],
+        ac: ["q=amarok|polo|toro → ficha + specs", "0 listings seed", "Down OK"],
+        dod: ["Sprint 3 exit: search de volumen AR no es []"]
+      },
+      {
+        key: "E4-401", sprint: "S4", type: "Story", status: "todo", points: 3, layer: "backend", priority: "P2",
+        summary: "Dockerfile del worker",
+        description: "Railway cron/one-off distinto del HTTP server. El Dockerfile raíz buildea cmd/server.",
+        ship: "Dockerfile.worker + make build-worker",
+        blockedBy: [], blocks: [],
+        scopeIn: ["go build -o /bin/worker ./cmd/worker", "COPY testdata", "USER nobody", "CMD worker", "Párrafo en railway.md"],
+        scopeOut: ["HTTP en el worker", "Cambiar CMD del Dockerfile API"],
+        files: ["Dockerfile.worker", "Makefile", "docs/runbooks/railway.md"],
+        ac: ["go build -o bin/worker ./cmd/worker", "Documentado path Dockerfile.worker en cron"],
+        dod: ["Puede paralelizar S3"]
+      },
+      {
+        key: "E4-402", sprint: "S4", type: "Story", status: "todo", points: 3, layer: "backend", priority: "P1",
+        summary: "Campos opcionales raw_title, active, observed_at",
+        description: "JSON viejo sigue parseando. active:false debe persistir false (hoy el SQL fuerza TRUE).",
+        ship: "fileRow + CSV opcionales. COALESCE($active, TRUE) en upsert",
+        blockedBy: ["E2-203"], blocks: ["E4-403"],
+        scopeIn: ["Active *bool", "ObservedAt string", "CSV columnas no required"],
+        scopeOut: ["Expire (E4-403)", "Dockerfile"],
+        files: ["internal/infrastructure/ingestion/file_listings.go", "internal/infrastructure/ingestion/file_listings_test.go", "internal/infrastructure/postgres/listing_repository.go"],
+        ac: ["JSON sin esos campos no panic", "active:false se persiste", "Tests verdes"],
+        dod: ["Un PR"]
+      },
+      {
+        key: "E4-403", sprint: "S4", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P1",
+        summary: "Expire listings no vistos",
+        description: "Como el mercado, no quiero contar un aviso que no vimos en 14 días. No DELETE.",
+        ship: "-expire-days N. Upsert primero, expire después.",
+        blockedBy: ["E4-402"], blocks: [],
+        scopeIn: ["ExpireStale(ctx, days)", "UPDATE active=false WHERE last_seen viejo", "Flag default 0 = no-op"],
+        scopeOut: ["UI", "Historia de precios (E8)"],
+        files: ["internal/domain/ports.go", "internal/infrastructure/postgres/listing_repository.go", "internal/application/expire_stale.go", "cmd/worker/main.go"],
+        ac: ["last_seen −30d + expire-days 14 → no aparece en GET listings", "market.count baja", "Fila sigue en DB active=false"],
+        dod: ["Documentar invocación solo-expire"]
+      },
+      {
+        key: "E4-404", sprint: "S4", type: "Story", status: "todo", points: 2, layer: "backend", priority: "P2",
+        summary: "Dry-run + JSON de títulos",
+        description: "Primer run en prod siempre -dry-run. Dry-run ya no escribe DB.",
+        ship: "testdata/listings.titles.json + README",
+        blockedBy: ["E2-203"], blocks: [],
+        scopeIn: ["Archivo ejemplo con raw_title sin trim_id", "README worker"],
+        scopeOut: ["Lógica de resolve"],
+        files: ["testdata/listings.titles.json", "README.md"],
+        ac: ["El archivo existe", "README lo menciona", "Dry-run no escribe"],
+        dod: ["Sprint 4 exit: dry-run + expire documentados"]
+      },
+      {
+        key: "E5-501", sprint: "S5", type: "Spike", status: "todo", points: 5, layer: "docs", priority: "P0",
+        summary: "Legal docs/SOURCES.md",
+        description: "Como el equipo, no queremos scrapear CCA y enterarnos en un juicio. Gate: cero clientes HTTP a portales.",
+        ship: "Markdown + Decision: use_ml_api = later | no | yes. Review senior Accepted.",
+        blockedBy: [], blocks: [],
+        scopeIn: ["Tabla Fuente | Permitido/No/Gris | Notas | Link", "DESIGN §9", "ML, Autocosmos, CCA/ACARA, DNRPA"],
+        scopeOut: ["Go", "Scrapers para probar", "Worker HTTP"],
+        files: ["docs/SOURCES.md"],
+        ac: ["Archivo existe", "Una línea de decisión", "Review senior"],
+        dod: ["PR solo markdown"]
+      },
+      {
+        key: "E5-502", sprint: "S5", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P1",
+        summary: "No mezclar seed con live",
+        description: "Los 10 Corolla seed no deben inflar la mediana cuando hay source=file.",
+        ship: "MARKET_EXCLUDE_SEED en MarketSummary y ListByTrimYear",
+        blockedBy: [], blocks: ["E5-504", "E6-601"],
+        scopeIn: ["NewListingRepository(pool, excludeSeed bool)", "Leer env en main.go", "Deal usa el mismo repo"],
+        scopeOut: ["Borrar filas seed", "UI badge (E5-503)"],
+        files: ["internal/infrastructure/postgres/listing_repository.go", "cmd/server/main.go", "README.md"],
+        ac: ["Flag on + solo seed → market count 0", "Flag off → igual que hoy", "Listings y market misma regla"],
+        dod: ["Local default false"]
+      },
+      {
+        key: "E5-503", sprint: "S5", type: "Story", status: "todo", points: 3, layer: "frontend", priority: "P1",
+        summary: "Badge de fuente en listings",
+        description: "UI no debe fingir que seed es Mercado Libre. listing.source ya existe.",
+        ship: "seed → Demostración; file → Carga manual",
+        blockedBy: [], blocks: [],
+        scopeIn: ["sourceLabel en VehicleSheet", "Links con rel=noopener (ya están)"],
+        scopeOut: ["Go", "MARKET_EXCLUDE_SEED"],
+        files: ["web/src/components/VehicleSheet.tsx"],
+        ac: ["/trims/1?year=2019 se lee “Demostración”"],
+        dod: ["Lint web"]
+      },
+      {
+        key: "E5-504", sprint: "S5", type: "Chore", status: "todo", points: 1, layer: "docs", priority: "P2",
+        summary: "Runbook: apagar seed en Railway",
+        description: "Cuando Corolla 2019 tenga ≥5 listings no-seed, setear MARKET_EXCLUDE_SEED=true. No el día 1.",
+        ship: "Párrafo en docs/runbooks/railway.md",
+        blockedBy: ["E5-502"], blocks: [],
+        scopeIn: ["Runbook"],
+        scopeOut: ["Código", "Cambiar vars de prod"],
+        files: ["docs/runbooks/railway.md"],
+        ac: ["Párrafo existe"],
+        dod: ["Sprint 5 exit: decisión legal escrita + UI no finge seed=ML"]
+      },
+      {
+        key: "E6-601", sprint: "S6", type: "Story", status: "todo", points: 8, layer: "fullstack", priority: "P1",
+        summary: "Filtro km_min / km_max",
+        description: "Como comprador, quiero ver el mercado de autos parecidos en km. Un XEi 40k no es comparable a 180k.",
+        ship: "Mismo filtro en listings, market y deal + chips UI. Partir BE+FE si se va de las manos.",
+        blockedBy: ["E1-101", "E5-502"], blocks: ["E6-602"],
+        scopeIn: ["Query opcionales km_min/km_max", "400 INVALID_KM", "NULL entra al filtro (documentar)", "Chips Cualquier km vs 80–140 mil"],
+        scopeOut: ["Regresión precio~km", "Fallback ±1 año"],
+        files: ["internal/domain/ports.go", "listing_repository.go", "list_listings.go", "get_market_summary.go", "assess_deal.go", "handler.go", "web/src/lib/api.ts", "VehicleSheet.tsx", "README.md"],
+        ac: ["Curl con/sin filtro cambia count", "UI click chip cambia mediana y lista", "Deal recibe los mismos params", "km_min=foo → 400"],
+        dod: ["README documenta NULL-in"]
+      },
+      {
+        key: "E7-701", sprint: "S6", type: "Story", status: "todo", points: 5, layer: "frontend", priority: "P1",
+        summary: "Comparar desde el search",
+        description: "Como usuario, quiero armar un compare desde / sin abrir cada ficha.",
+        ship: "web/src/lib/compare.ts + botón en HomeSearch + barra fija",
+        blockedBy: [], blocks: ["E7-704"],
+        scopeIn: ["Extraer sessionStorage de VehicleSheet", "Tope 3", "Link /compare?trim_ids=&year=", "Solo client components leen storage"],
+        scopeOut: ["API compare", "Año edge (E7-702) salvo year del link"],
+        files: ["web/src/lib/compare.ts", "web/src/components/VehicleSheet.tsx", "web/src/components/HomeSearch.tsx"],
+        ac: ["Home → search corolla → Comparar XEi y XLi → 2 columnas", "Helpers sin duplicar"],
+        dod: ["npm run lint"]
+      },
+      {
+        key: "E7-702", sprint: "S6", type: "Story", status: "todo", points: 3, layer: "fullstack", priority: "P2",
+        summary: "Compare: trim fuera de año",
+        description: "XEi E210 es 2019–2026. /compare?year=2014 no debe 404 todo el compare.",
+        ship: "200 + year_from/year_to/in_year_range en CompareTrim + mensaje UI",
+        blockedBy: [], blocks: [],
+        scopeIn: ["compare_trims.go campos JSON snake_case", "compare/page.tsx texto no se cotiza para year"],
+        scopeOut: ["Fallback de deal", "404 global"],
+        files: ["internal/application/compare_trims.go", "web/src/app/compare/page.tsx", "web/src/lib/types.ts"],
+        ac: ["curl year=2014 → 200 no 404", "UI mensaje en la columna", "Compare 2019 intacto"],
+        dod: ["Sprint 6 exit: chips km + compare desde home"]
+      },
+      {
+        key: "E6-602", sprint: "S7", type: "Story", status: "todo", points: 8, layer: "backend", priority: "P1",
+        summary: "Fallback trim ±1 año",
+        description: "Como comprador de un 2020 con 2 avisos, prefiero estimación honesta de 2019+2021 que un badge mentiroso.",
+        ship: "Si count exacto < 5, unir year±1 del mismo trim_id. Disclaimer distinto. No ponderar 0.7/0.4.",
+        blockedBy: ["E1-101", "E6-601"], blocks: [],
+        scopeIn: ["Market y deal misma regla", "DealDisclaimerFallback", "Vecinos only (no mezclar exacto+vecinos salvo documentar)"],
+        scopeOut: ["Peso 0.7 mismo modelo (icebox)"],
+        files: ["internal/domain/deal.go", "internal/domain/ports.go", "listing_repository.go", "assess_deal.go", "get_market_summary.go", "README.md"],
+        ac: ["Exacto 5 → no mezcla, disclaimer OK", "Exacto 2 + vecinos 6 → ok + disclaimer fallback", "Exacto 2 + vecinos 2 → insufficient"],
+        dod: ["README. Si 601 existe, aplicar km a vecinos"]
+      },
+      {
+        key: "E7-703", sprint: "S7", type: "Story", status: "todo", points: 3, layer: "frontend", priority: "P2",
+        summary: "Secciones Seguridad / Motor / Frenos",
+        description: "Headings de equipamiento en español y orden fijo. Motor queda en ficha técnica.",
+        ship: "CATEGORY_ORDER + CATEGORY_ES en VehicleSheet",
+        blockedBy: [], blocks: [],
+        scopeIn: ["safety → Seguridad, brakes → Frenos, comfort → Confort"],
+        scopeOut: ["API", "Seed (salvo category mal escrita → PO)"],
+        files: ["web/src/components/VehicleSheet.tsx"],
+        ac: ["XEi 2019: heading Seguridad antes que el resto", "No duplicar motor en equipamiento"],
+        dod: ["Lint"]
+      },
+      {
+        key: "E7-704", sprint: "S7", type: "Story", status: "todo", points: 2, layer: "frontend", priority: "P1",
+        summary: "Deep link compare siempre",
+        description: "Quiero copiar /compare?trim_ids=1,2&year=2019 y que un amigo vea lo mismo.",
+        ship: "Cero CTAs a /compare sin query",
+        blockedBy: ["E7-701"], blocks: [],
+        scopeIn: ["Auditar ficha + home barra", "Incógnito no depende de sessionStorage"],
+        scopeOut: ["API"],
+        files: ["web/src/components/HomeSearch.tsx", "web/src/components/VehicleSheet.tsx"],
+        ac: ["URL completa funciona en incógnito", "Ningún Comparar va a /compare pelado"],
+        dod: ["Sprint 7 exit: deal fallback ±1 + ficha más legible"]
+      },
+      {
+        key: "E8-801", sprint: "S8", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P2",
+        summary: "Tabla listing_price_observations",
+        description: "Como el producto futuro, quiero ver que un aviso bajó de $26M a $24M. Hoy Upsert pisa price.",
+        ship: "2 ingest, 2 precios → 2 obs, 1 listing. Misma transacción.",
+        blockedBy: [], blocks: ["E8-802"],
+        scopeIn: ["Migración observations", "SELECT → insert/update+obs / last_seen only", "Rollback si obs falla"],
+        scopeOut: ["HTTP history", "UI"],
+        files: ["migrations/00N_create_listing_price_observations.up.sql", "internal/infrastructure/postgres/listing_repository.go"],
+        ac: ["UNIQUE (source, external_id) intacto", "Mismo price no duplica obs", "Precio distinto inserta obs"],
+        dod: ["No DELETE de listings"]
+      },
+      {
+        key: "E8-802", sprint: "S8", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P2",
+        summary: "GET /trims/{id}/market/history",
+        description: "Como analista, quiero ver si la mediana subió en 8 semanas. Agregación de observaciones, no snapshot vigente.",
+        ship: "Hex completa + HISTORY_ENABLED (prod false hasta tener datos)",
+        blockedBy: ["E8-801"], blocks: ["E8-803"],
+        scopeIn: ["Port MarketHistory", "date_trunc week + percentile_cont", "year required; from/to opcionales", "false → 404 NOT_FOUND"],
+        scopeOut: ["Chart.js", "Sparkline (E8-803)", "Código HISTORY_DISABLED"],
+        files: ["internal/domain/ports.go", "listing_repository.go", "internal/application/get_market_history.go", "handler.go", "router.go", "cmd/server/main.go", "README.md"],
+        ac: ["200 lista, nunca null", "sin year → 400 INVALID_YEAR", "flag off → 404", "[] si no hay datos"],
+        dod: ["Test handler 400"]
+      },
+      {
+        key: "E8-803", sprint: "S8", type: "Story", status: "todo", points: 5, layer: "frontend", priority: "P2",
+        summary: "Tabla 8 semanas en la ficha",
+        description: "Mostrar historia si hay datos. Si 404 o [] no mostrar la sección.",
+        ship: "getMarketHistory en api.ts + tabla HTML. Sin chart library.",
+        blockedBy: ["E8-802"], blocks: [],
+        scopeIn: ["Tabla semana | mediana | n", "Disclaimer visible"],
+        scopeOut: ["Recharts", "Billing premium"],
+        files: ["web/src/lib/api.ts", "web/src/components/VehicleSheet.tsx"],
+        ac: ["Flag off: ficha igual que hoy", "Flag on + datos: tabla visible"],
+        dod: ["No rompe si history no existe"]
+      },
+      {
+        key: "E9-901", sprint: "S8", type: "Chore", status: "todo", points: 2, layer: "docs", priority: "P2",
+        summary: "Uptime + custom domain runbook",
+        description: "Ping web / y API /health. CNAME del dominio al servicio web.",
+        ship: "docs/runbooks/railway.md",
+        blockedBy: ["E1-106"], blocks: [],
+        scopeIn: ["Healthchecks.io / Better Uptime", "CNAME → web, no API"],
+        scopeOut: ["Go", "Next", "DNS prod sin OK del PO"],
+        files: ["docs/runbooks/railway.md"],
+        ac: ["Pasos escritos", "Cero código de producto"],
+        dod: ["Sprint 8: runbook de dominio"]
+      },
+      {
+        key: "E9-902", sprint: "S8", type: "Story", status: "todo", points: 3, layer: "frontend", priority: "P3",
+        summary: "Analytics mínimo",
+        description: "Eventos nombre + trim_id + year. Sin PII.",
+        ship: "web/src/lib/track.ts no-op si no hay NEXT_PUBLIC_ANALYTICS_URL",
+        blockedBy: [], blocks: [],
+        scopeIn: ["HomeSearch submit", "VehicleSheet mount", "DealCalculator submit", "compare page"],
+        scopeOut: ["GA pesado", "Cookie banner", "Precio+DNI", "IP"],
+        files: ["web/src/lib/track.ts", "README.md"],
+        ac: ["Stub existe", "4 eventos cableados", "README", "Sin PII"],
+        dod: ["Lint"]
+      },
+      {
+        key: "E9-903", sprint: "S8", type: "Story", status: "todo", points: 1, layer: "backend", priority: "P2",
+        summary: "DB_MAX_CONNS configurable",
+        description: "Hoy MaxConns = 25 hardcode. Hobby Railway debería poder bajar a 5–10.",
+        ship: "Env DB_MAX_CONNS; vacía o inválida → 25",
+        blockedBy: [], blocks: [],
+        scopeIn: ["cmd/server/main.go", "Runbook hobby 5–10"],
+        scopeOut: ["MinConns salvo PO", "Pool tuning extra"],
+        files: ["cmd/server/main.go", "docs/runbooks/railway.md"],
+        ac: ["Env funciona", "Default 25", "Documentado"],
+        dod: ["Sprint 8 exit: historia detrás de flag + runbook de dominio"]
+      }
+    ];
+
+    const SPRINTS = [
+      { id: "S1", title: "S1 · Honest", sub: "hecho + E1-107" },
+      { id: "S2", title: "S2 · Identity", sub: "7 pts rest." },
+      { id: "S3", title: "S3 · Catalog", sub: "19 pts" },
+      { id: "S4", title: "S4 · Ingest", sub: "13 pts" },
+      { id: "S5", title: "S5 · Policy", sub: "14 pts" },
+      { id: "S6", title: "S6 · km+compare", sub: "16 pts" },
+      { id: "S7", title: "S7 · fallback", sub: "13 pts" },
+      { id: "S8", title: "S8 · history", sub: "21 pts" }
+    ];
+
+    const byKey = Object.fromEntries(TICKETS.map((t) => [t.key, t]));
+    let filter = "all";
+    let openKey = null;
+
+    function matches(t) {
+      if (filter === "all") return true;
+      if (filter === "todo" || filter === "done") return t.status === filter;
+      return t.layer === filter;
+    }
+
+    function renderBoard() {
+      const board = document.getElementById("board");
+      board.innerHTML = SPRINTS.map((s) => {
+        const items = TICKETS.filter((t) => t.sprint === s.id);
+        const visible = items.filter(matches);
+        return `<section class="col">
+          <div class="col-head">${s.title} <span>${visible.length}/${items.length} · ${s.sub}</span></div>
+          <div class="col-body">${items.map(cardHtml).join("")}</div>
+        </section>`;
+      }).join("");
+      board.querySelectorAll(".issue").forEach((el) => {
+        el.addEventListener("click", () => openIssue(el.dataset.key));
+      });
+      const todo = TICKETS.filter((t) => t.status === "todo");
+      document.getElementById("n-todo").textContent = String(todo.length);
+      document.getElementById("n-done").textContent = String(TICKETS.filter((t) => t.status === "done").length);
+      document.getElementById("n-pts").textContent = String(todo.reduce((a, t) => a + t.points, 0));
+    }
+
+    function cardHtml(t) {
+      const hide = matches(t) ? "" : " is-hidden";
+      const open = t.key === openKey ? " is-open" : "";
+      return `<button type="button" class="issue${hide}${open}" data-key="${t.key}" data-status="${t.status}" data-layer="${t.layer}">
+        <p class="sum">${esc(t.summary)}</p>
+        <div class="row">
+          <span class="key">${t.key}</span>
+          <span class="loz ${t.status}">${t.status === "done" ? "Done" : "To do"}</span>
+          <span class="loz ${t.type.toLowerCase()}">${t.type}</span>
+          <span class="loz ${t.layer}">${t.layer}</span>
+          <span class="pts">${t.points}</span>
+        </div>
+      </button>`;
+    }
+
+    function openIssue(key) {
+      const t = byKey[key];
+      if (!t) return;
+      openKey = key;
+      const drawer = document.getElementById("drawer");
+      const panel = document.getElementById("panel");
+      drawer.hidden = false;
+      drawer.classList.add("open");
+      panel.innerHTML = issueHtml(t);
+      document.querySelectorAll(".issue").forEach((el) => {
+        el.classList.toggle("is-open", el.dataset.key === key);
+      });
+      panel.querySelectorAll("[data-link]").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          openIssue(a.getAttribute("data-link"));
+        });
+      });
+    }
+
+    function closeIssue() {
+      openKey = null;
+      const drawer = document.getElementById("drawer");
+      drawer.classList.remove("open");
+      drawer.hidden = true;
+      document.querySelectorAll(".issue").forEach((el) => el.classList.remove("is-open"));
+    }
+
+    function links(keys) {
+      if (!keys.length) return "—";
+      return keys.map((k) => {
+        const t = byKey[k];
+        const label = t ? `${k} ${t.summary}` : k;
+        return `<a href="#${k}" data-link="${k}">${esc(label)}</a>`;
+      }).join("<br>");
+    }
+
+    function issueHtml(t) {
+      return `
+        <div class="panel-top">
+          <span class="key">${t.key}</span>
+          <button type="button" class="close" id="close-issue">Cerrar</button>
+        </div>
+        <h2>${esc(t.summary)}</h2>
+        <dl class="meta-grid">
+          <dt>Type</dt><dd><span class="loz ${t.type.toLowerCase()}">${t.type}</span></dd>
+          <dt>Status</dt><dd><span class="loz ${t.status}">${t.status === "done" ? "Done" : "To do"}</span></dd>
+          <dt>Priority</dt><dd>${t.priority}</dd>
+          <dt>Points</dt><dd>${t.points}</dd>
+          <dt>Sprint</dt><dd>${t.sprint}</dd>
+          <dt>Component</dt><dd><span class="loz ${t.layer}">${t.layer}</span></dd>
+          <dt>Ship</dt><dd>${esc(t.ship)}</dd>
+        </dl>
+        <h3>Description</h3>
+        <p>${esc(t.description)}</p>
+        <h3>Linked issues</h3>
+        <dl class="meta-grid">
+          <dt>Blocked by</dt><dd>${links(t.blockedBy)}</dd>
+          <dt>Blocks</dt><dd>${links(t.blocks)}</dd>
+        </dl>
+        <h3>Acceptance criteria</h3>
+        <ul class="ac">${t.ac.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+        <div class="split">
+          <div>
+            <h3>Scope in</h3>
+            <div class="box"><ul>${t.scopeIn.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+          </div>
+          <div>
+            <h3>Scope out</h3>
+            <div class="box"><ul>${t.scopeOut.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+          </div>
+        </div>
+        <h3>Files</h3>
+        <div class="box files">${t.files.map(esc).join("<br>")}</div>
+        <h3>Definition of done</h3>
+        <ul>${t.dod.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      `;
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    document.querySelectorAll(".toolbar button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        filter = btn.getAttribute("data-filter");
+        document.querySelectorAll(".toolbar button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderBoard();
+      });
+    });
+    document.getElementById("drawer-bg").addEventListener("click", closeIssue);
+    document.getElementById("panel").addEventListener("click", (e) => {
+      if (e.target.id === "close-issue") closeIssue();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeIssue();
+    });
+
+    renderBoard();
+    const hash = location.hash.replace("#", "");
+    if (byKey[hash]) openIssue(hash);
+  </script>
+  <script type="module">
+    import { instance } from "https://cdn.jsdelivr.net/npm/@viz-js/viz@3.11.0/+esm";
+    const common = `
+      graph [bgcolor="transparent", fontname="Helvetica,Arial,sans-serif", fontsize=11];
+      node [fontname="Helvetica,Arial,sans-serif", fontsize=10, shape=box, style="rounded,filled", fillcolor="#deebff", color="#0747a6"];
+      edge [color="#5e6c84", arrowsize=0.6];
+    `;
+    const done = 'fillcolor="#e3fcef", color="#006644"';
+    const dots = {
+      "g-epics": `digraph epics {
+        ${common} rankdir=LR; pad=0.2;
+        E1 [label="E1 Honest", ${done}];
+        E2 [label="E2 Identity"];
+        E3 [label="E3 Catalog"];
+        E4 [label="E4 Ingest"];
+        E5 [label="E5 Policy"];
+        E6 [label="E6 Deal"];
+        E7 [label="E7 Compare"];
+        E8 [label="E8 History"];
+        E9 [label="E9 Operate"];
+        E1->E2; E2->E3; E2->E4; E3->E4; E4->E5; E5->E6; E1->E6; E3->E7; E4->E8; E5->E8; E1->E9;
+      }`,
+      "g-cal": `digraph cal {
+        ${common} rankdir=LR; pad=0.2;
+        s1 [label="S1 w1-2", ${done}];
+        s2 [label="S2 w3-4"];
+        s3 [label="S3 w5-6"];
+        s4 [label="S4 w7-8"];
+        s5 [label="S5 w9-10", fillcolor="#fff0b3", color="#172b4d"];
+        s6 [label="S6 w11-12"];
+        s7 [label="S7 w13-14"];
+        s8 [label="S8 w15-16"];
+        s1->s2->s3->s4->s5->s6->s7->s8;
+      }`,
+    };
+    const viz = await instance();
+    for (const [id, dot] of Object.entries(dots)) {
+      const el = document.getElementById(id);
+      try { el.appendChild(viz.renderSVGElement(dot)); }
+      catch (err) { el.innerHTML = `<p>Graphviz: ${String(err)}</p>`; }
+    }
+  </script>
+</body>
+</html>
