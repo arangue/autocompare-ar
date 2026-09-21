@@ -7,6 +7,7 @@ type Listing struct {
 	Source     string    `json:"source"`
 	ExternalID string    `json:"external_id"`
 	TrimID     int       `json:"trim_id"`
+	RawTitle   string    `json:"-"`
 	Year       int       `json:"year"`
 	KM         *int      `json:"km"`
 	Price      int64     `json:"price"`

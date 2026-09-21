@@ -54,6 +54,28 @@ func TestParseFile_CSV(t *testing.T) {
 	}
 }
 
+func TestParseJSON_rawTitleWithoutTrimID(t *testing.T) {
+	path := writeTemp(t, "listings.json", `[
+	  {"source":"file","external_id":"x","year":2019,"price":20000000,
+	   "raw_title":"Toyota Corolla XEI 2.0 CVT"}
+	]`)
+
+	listings, skipped, err := ParseFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if skipped != 0 || len(listings) != 1 {
+		t.Fatalf("len=%d skipped=%d", len(listings), skipped)
+	}
+	got := listings[0]
+	if got.TrimID != 0 {
+		t.Fatalf("trim_id = %d", got.TrimID)
+	}
+	if got.RawTitle != "Toyota Corolla XEI 2.0 CVT" {
+		t.Fatalf("raw_title = %q", got.RawTitle)
+	}
+}
+
 func TestParseFile_unsupported(t *testing.T) {
 	path := writeTemp(t, "listings.txt", "nope")
 	if _, _, err := ParseFile(path); err == nil {

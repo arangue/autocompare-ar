@@ -34,6 +34,7 @@ type fileRow struct {
 	Source     string  `json:"source"`
 	ExternalID string  `json:"external_id"`
 	TrimID     int     `json:"trim_id"`
+	RawTitle   string  `json:"raw_title"`
 	Year       int     `json:"year"`
 	KM         *int    `json:"km"`
 	Price      int64   `json:"price"`
@@ -91,6 +92,7 @@ func parseCSV(data []byte) ([]domain.Listing, int, error) {
 			Currency:   csvField(record, idx, "currency"),
 		}
 		row.TrimID, _ = strconv.Atoi(csvField(record, idx, "trim_id"))
+		row.RawTitle = csvField(record, idx, "raw_title")
 		row.Year, _ = strconv.Atoi(csvField(record, idx, "year"))
 		row.Price, _ = strconv.ParseInt(csvField(record, idx, "price"), 10, 64)
 		if km := csvField(record, idx, "km"); km != "" {
@@ -127,7 +129,11 @@ func (r fileRow) toListing() (domain.Listing, bool) {
 	if strings.TrimSpace(r.Source) == "" || strings.TrimSpace(r.ExternalID) == "" {
 		return domain.Listing{}, false
 	}
-	if r.TrimID <= 0 || r.Year <= 0 || r.Price <= 0 {
+	rawTitle := strings.TrimSpace(r.RawTitle)
+	if r.Year <= 0 || r.Price <= 0 {
+		return domain.Listing{}, false
+	}
+	if r.TrimID <= 0 && rawTitle == "" {
 		return domain.Listing{}, false
 	}
 
@@ -140,6 +146,7 @@ func (r fileRow) toListing() (domain.Listing, bool) {
 		Source:     strings.TrimSpace(r.Source),
 		ExternalID: strings.TrimSpace(r.ExternalID),
 		TrimID:     r.TrimID,
+		RawTitle:   rawTitle,
 		Year:       r.Year,
 		KM:         r.KM,
 		Price:      r.Price,

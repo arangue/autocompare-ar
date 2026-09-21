@@ -22,3 +22,7 @@ type ListingRepository interface {
 type PricingRepository interface {
 	ListReferences(ctx context.Context, trimID, year int) ([]ReferencePrice, error)
 }
+
+type AliasRepository interface {
+	Resolve(ctx context.Context, source, raw string) (trimID int, ok bool, err error)
+}
