@@ -197,6 +197,16 @@
     }
     .panel a { color: var(--accent); text-decoration: none; font-weight: 600; }
     .panel a:hover { text-decoration: underline; }
+    .howto {
+      background: #deebff;
+      border: 1px solid #4c9aff;
+      border-radius: 3px;
+      padding: 0.65rem 0.8rem;
+      margin: 0 0 1rem;
+      font-size: 0.88rem;
+    }
+    .howto a { font-weight: 700; }
+    .howto .hint { display: block; margin-top: 0.28rem; color: var(--muted); font-size: 0.78rem; }
     .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     @media (max-width: 640px) { .split { grid-template-columns: 1fr; } }
     .box { background: #f4f5f7; border-radius: 3px; padding: 0.55rem 0.7rem; }
@@ -210,7 +220,7 @@
     <div class="wrap">
       <p>AutoCompare AR · post-MVP</p>
       <h1>Board de tickets</h1>
-      <p>Un ticket = un PR. Tutorial junior (pasos, tests copy-paste): <a href="agile-roadmap.html">agile-roadmap.html</a>. Este board no implementa código.</p>
+      <p>Un ticket = un PR. Este board es para PO, manager y quien prioriza. Jr y QA: abrí la ficha y el link <strong>Cómo</strong> (pasos, tests, verificación). Tutorial: <a href="agile-roadmap.html">agile-roadmap.html</a>.</p>
     </div>
   </header>
   <div class="toolbar">
@@ -237,7 +247,7 @@
     </div>
 
     <h2>Backlog por sprint</h2>
-    <p class="muted" style="margin-top:0">Click en una card para abrir el issue. S1 está Done salvo E1-107. Próxima: E2-203.</p>
+    <p class="muted" style="margin-top:0">Click en una card para abrir el issue. S1–S3 Done. Próxima: E4-401.</p>
     <div class="board" id="board"></div>
 
     <h2 id="icebox">Icebox</h2>
@@ -331,7 +341,7 @@
         dod: ["Ya en el repo. E5-504 y E9-901 lo extienden."]
       },
       {
-        key: "E1-107", sprint: "S1", type: "Chore", status: "todo", points: 0, layer: "backend", priority: "P0",
+        key: "E1-107", sprint: "S1", type: "Chore", status: "done", points: 0, layer: "backend", priority: "P0",
         summary: "Test stale: fallbackWithoutPercentiles Count ≥ 5",
         description: "TestAssessDeal_fallbackWithoutPercentiles usa Count: 2. Con N=5 cae en insufficient_data. No es el fallback ±1 año (E6-602).",
         ship: "Subir Count a >= 5 en ese test (path sin p25/p75)",
@@ -340,7 +350,8 @@
         scopeOut: ["classifyDealBand", "AssessDeal production code"],
         files: ["internal/application/assess_deal_test.go"],
         ac: ["go test ./internal/application/ -count=1 verde", "El test sigue cubriendo mediana sin percentiles"],
-        dod: ["Primer PR backend. Diff mínimo."]
+        dod: ["Ya en el repo. No rehacer."],
+        tutorial: false
       },
       {
         key: "E2-201", sprint: "S2", type: "Story", status: "done", points: 5, layer: "backend", priority: "P0",
@@ -367,7 +378,7 @@
         dod: ["Ya en el repo. No rehacer."]
       },
       {
-        key: "E2-203", sprint: "S2", type: "Story", status: "todo", points: 5, layer: "backend", priority: "P0",
+        key: "E2-203", sprint: "S2", type: "Story", status: "done", points: 5, layer: "backend", priority: "P0",
         summary: "Resolver trim_id desde raw_title",
         description: "Como operador, quiero dropear un JSON de títulos de ML sin saber IDs internos.",
         ship: "Worker: trim_id opcional + AliasRepository.Resolve; miss → skip + warn, exit 0",
@@ -376,10 +387,10 @@
         scopeOut: ["Levenshtein", "Crear trims on the fly", "HTTP", "pgx en file_listings.go"],
         files: ["internal/domain/ports.go", "internal/infrastructure/postgres/alias_repository.go", "internal/infrastructure/ingestion/file_listings.go", "cmd/worker/main.go"],
         ac: ["Alias seed + \"Toyota Corolla XEI 2.0 CVT\" → upsert trim 1", "Título basura → skipped++, exit 0", "JSON con trim_id numérico sigue igual", "go build ./cmd/worker"],
-        dod: ["go test ./internal/infrastructure/ingestion/"]
+        dod: ["Ya en el repo. No rehacer."]
       },
       {
-        key: "E2-204", sprint: "S2", type: "Story", status: "todo", points: 2, layer: "backend", priority: "P1",
+        key: "E2-204", sprint: "S2", type: "Story", status: "done", points: 2, layer: "backend", priority: "P1",
         summary: "Tests de 15 variantes reales",
         description: "Como reviewer, quiero 15 casos escritos para no romper el matcher en silencio.",
         ship: "Tabla-driven, 0 red. Expandir aliases con 007 si hace falta.",
@@ -388,43 +399,43 @@
         scopeOut: ["Scrapers", "HTTP", "Railway"],
         files: ["internal/infrastructure/ingestion/normalize/normalize_test.go"],
         ac: ["15 casos", "≥10 resuelven a XEi", "5 pueden ser no-match", "0 llamadas de red"],
-        dod: ["Sprint 2 exit: JSON de títulos carga Corolla y skipea basura"]
+        dod: ["Ya en el repo. No rehacer. 007 no hizo falta."]
       },
       {
-        key: "E3-301", sprint: "S3", type: "Story", status: "todo", points: 3, layer: "backend", priority: "P1",
+        key: "E3-301", sprint: "S3", type: "Story", status: "done", points: 3, layer: "backend", priority: "P1",
         summary: "Validador de catálogo",
         description: "Como reviewer, no quiero mergear SQL con year_from > year_to o name vacío.",
         ship: "make catalog-check (query contra DB local)",
         blockedBy: [], blocks: ["E3-302"],
         scopeIn: ["Test Go + Makefile. Requiere make db-up"],
         scopeOut: ["Parser SQL completo", "CI GitHub (no blocker)"],
-        files: ["internal/infrastructure/postgres/", "Makefile"],
+        files: ["internal/infrastructure/postgres/catalog_test.go", "Makefile"],
         ac: ["Check rojo con fixture roto", "Verde en seed actual", "Target en Makefile"],
-        dod: ["No parsear SQL a mano"]
+        dod: ["Ya en el repo. No rehacer."]
       },
       {
-        key: "E3-302", sprint: "S3", type: "Story", status: "todo", points: 8, layer: "backend", priority: "P1",
+        key: "E3-302", sprint: "S3", type: "Story", status: "done", points: 8, layer: "backend", priority: "P1",
         summary: "Completar Toyota (+8 trims)",
         description: "Como usuario, buscar hilux tiene que devolver ficha con motor, aunque deal diga sin datos.",
         ship: "Migración seed. 0 vehicle_listings nuevos. Partir 302a Hilux / 302b resto si asusta.",
         blockedBy: ["E3-301"], blocks: ["E3-303"],
         scopeIn: ["Hilux SR 2.8 TDI 4x2 + SRX 2.8 TDI 4x4", "SW4 SRX 2.8 TDI", "Etios XLS 1.5 + Platinum 1.5", "Yaris XLS 1.5", "Corolla Cross XEI 2.0 + SEG 2.0", "specs + ABS/ESP/airbags"],
         scopeOut: ["Listings seed", "Precios CCA", "Worker"],
-        files: ["migrations/00N_seed_toyota_expand.up.sql", "migrations/00N_seed_toyota_expand.down.sql"],
+        files: ["migrations/007_seed_toyota_expand.up.sql", "migrations/007_seed_toyota_expand.down.sql"],
         ac: ["curl search?q=hilux no []", "Ficha muestra motor", "GET /deal → insufficient_data", "0 filas nuevas en vehicle_listings", "Down no rompe FKs", "make catalog-check verde"],
-        dod: ["No reinsertar brand Toyota. Si 007 lo usó E2-204, esta es 008."]
+        dod: ["Ya en el repo. No rehacer. 007, no 008."]
       },
       {
-        key: "E3-303", sprint: "S3", type: "Story", status: "todo", points: 8, layer: "backend", priority: "P2",
+        key: "E3-303", sprint: "S3", type: "Story", status: "done", points: 8, layer: "backend", priority: "P2",
         summary: "VW + Fiat de volumen",
         description: "Search de Gol/Polo/Amarok/Toro/Pulse debe devolver ficha + specs. Cronos y Golf Comfortline ya existen.",
         ship: "Migración seed. 0 listings. Si no entra, PO mueve a S4: catálogo > worker.",
         blockedBy: ["E3-302"], blocks: [],
         scopeIn: ["Gol Trendline", "Polo Comfortline", "Amarok Comfortline + Highline", "Toro Freedom 1.8", "Pulse Drive 1.3"],
         scopeOut: ["Reinsertar Golf Comfortline o Cronos Drive 1.3", "Precios guía masivos"],
-        files: ["migrations/00N_seed_vw_fiat_expand.up.sql"],
+        files: ["migrations/008_seed_vw_fiat_expand.up.sql", "migrations/008_seed_vw_fiat_expand.down.sql"],
         ac: ["q=amarok|polo|toro → ficha + specs", "0 listings seed", "Down OK"],
-        dod: ["Sprint 3 exit: search de volumen AR no es []"]
+        dod: ["Ya en el repo. No rehacer."]
       },
       {
         key: "E4-401", sprint: "S4", type: "Story", status: "todo", points: 3, layer: "backend", priority: "P2",
@@ -669,9 +680,9 @@
     ];
 
     const SPRINTS = [
-      { id: "S1", title: "S1 · Honest", sub: "hecho + E1-107" },
-      { id: "S2", title: "S2 · Identity", sub: "7 pts rest." },
-      { id: "S3", title: "S3 · Catalog", sub: "19 pts" },
+      { id: "S1", title: "S1 · Honest", sub: "hecho" },
+      { id: "S2", title: "S2 · Identity", sub: "hecho" },
+      { id: "S3", title: "S3 · Catalog", sub: "hecho" },
       { id: "S4", title: "S4 · Ingest", sub: "13 pts" },
       { id: "S5", title: "S5 · Policy", sub: "14 pts" },
       { id: "S6", title: "S6 · km+compare", sub: "16 pts" },
@@ -760,6 +771,17 @@
       }).join("<br>");
     }
 
+    function howtoHtml(t) {
+      if (t.tutorial === false) {
+        return `<div class="howto">Sin ficha en el roadmap. El DoD de esta card alcanza (chore de un test).</div>`;
+      }
+      const href = "agile-roadmap.html#" + t.key.toLowerCase();
+      return `<div class="howto">
+        <a href="${href}">Cómo hacerlo → ${esc(t.key)} en el roadmap</a>
+        <span class="hint">Jr: pasos y tests copy-paste. QA: verificación manual. PO/manager: alcanza esta ficha.</span>
+      </div>`;
+    }
+
     function issueHtml(t) {
       return `
         <div class="panel-top">
@@ -767,6 +789,7 @@
           <button type="button" class="close" id="close-issue">Cerrar</button>
         </div>
         <h2>${esc(t.summary)}</h2>
+        ${howtoHtml(t)}
         <dl class="meta-grid">
           <dt>Type</dt><dd><span class="loz ${t.type.toLowerCase()}">${t.type}</span></dd>
           <dt>Status</dt><dd><span class="loz ${t.status}">${t.status === "done" ? "Done" : "To do"}</span></dd>
@@ -842,8 +865,8 @@
       "g-epics": `digraph epics {
         ${common} rankdir=LR; pad=0.2;
         E1 [label="E1 Honest", ${done}];
-        E2 [label="E2 Identity"];
-        E3 [label="E3 Catalog"];
+        E2 [label="E2 Identity", ${done}];
+        E3 [label="E3 Catalog", ${done}];
         E4 [label="E4 Ingest"];
         E5 [label="E5 Policy"];
         E6 [label="E6 Deal"];
@@ -855,8 +878,8 @@
       "g-cal": `digraph cal {
         ${common} rankdir=LR; pad=0.2;
         s1 [label="S1 w1-2", ${done}];
-        s2 [label="S2 w3-4"];
-        s3 [label="S3 w5-6"];
+        s2 [label="S2 w3-4", ${done}];
+        s3 [label="S3 w5-6", ${done}];
         s4 [label="S4 w7-8"];
         s5 [label="S5 w9-10", fillcolor="#fff0b3", color="#172b4d"];
         s6 [label="S6 w11-12"];
