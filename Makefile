@@ -4,7 +4,7 @@ export
 DATABASE_URL ?= postgres://user:password@localhost:5435/autocompare_db?sslmode=disable
 INGEST_FILE ?= testdata/listings.json
 
-.PHONY: help dev db-up db-down api web ingest catalog-check build fmt tidy clean
+.PHONY: help dev db-up db-down api web ingest catalog-check build build-worker fmt tidy clean
 
 help:
 	@echo "  make dev            -> start Postgres and run the API"
@@ -15,6 +15,7 @@ help:
 	@echo "  make ingest         -> upsert listings from INGEST_FILE (default testdata/listings.json)"
 	@echo "  make catalog-check  -> fail if seed trims have inverted years or empty names (needs db-up + migrations)"
 	@echo "  make build          -> compile API binary to bin/server"
+	@echo "  make build-worker   -> compile worker binary to bin/worker"
 	@echo "  make clean          -> remove containers and volumes"
 
 dev: db-up
@@ -41,6 +42,9 @@ catalog-check:
 
 build:
 	go build -o bin/server ./cmd/server
+
+build-worker:
+	go build -o bin/worker ./cmd/worker
 
 fmt:
 	go fmt ./...

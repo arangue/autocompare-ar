@@ -4,5 +4,6 @@ bin
 web
 .env
 **/*_test.go
-testdata
+testdata/*
+!testdata/listings.json
 *.md

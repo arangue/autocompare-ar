@@ -1,11 +1,19 @@
 # Railway
 
-## Servicios (3)
+## Servicios (3, siempre prendidos)
 
 - Postgres (plugin)
 - API: Dockerfile de la raíz del repo (Go)
 - Web: Root Directory = `web`, Dockerfile `web/Dockerfile`
   - Dónde: servicio web → Settings → Source → Add Root Directory
+
+## Worker (cron u one-off, no es HTTP)
+
+No uses el Dockerfile de la raíz ni Generate Domain: Railway le pega healthcheck a `/` y mata el proceso (`exited`) porque el worker no escucha HTTP.
+
+- Dockerfile path: `Dockerfile.worker` (Settings → Build)
+- Env: `DATABASE_URL=${{NOMBRE_CAJITA_POSTGRES.DATABASE_URL}}` y `INGEST_FILE=/testdata/listings.json`
+- No pongas `EXPOSE` ni healthcheck HTTP en este servicio
 
 ## Variables
 
