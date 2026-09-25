@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/arangue/autocompare-ar/internal/domain"
 )
@@ -35,6 +36,8 @@ type fileRow struct {
 	ExternalID string  `json:"external_id"`
 	TrimID     int     `json:"trim_id"`
 	RawTitle   string  `json:"raw_title"`
+	Active     *bool   `json:"active"`
+	ObservedAt string  `json:"observed_at"`
 	Year       int     `json:"year"`
 	KM         *int    `json:"km"`
 	Price      int64   `json:"price"`
@@ -106,6 +109,12 @@ func parseCSV(data []byte) ([]domain.Listing, int, error) {
 		if url := csvField(record, idx, "url"); url != "" {
 			row.URL = &url
 		}
+		row.ObservedAt = csvField(record, idx, "observed_at")
+		if active := csvField(record, idx, "active"); active != "" {
+			if b, err := strconv.ParseBool(active); err == nil {
+				row.Active = &b
+			}
+		}
 
 		listing, ok := row.toListing()
 		if !ok {
@@ -142,6 +151,13 @@ func (r fileRow) toListing() (domain.Listing, bool) {
 		currency = "ARS"
 	}
 
+	var lastSeen time.Time
+	if s := strings.TrimSpace(r.ObservedAt); s != "" {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			lastSeen = t
+		}
+	}
+
 	return domain.Listing{
 		Source:     strings.TrimSpace(r.Source),
 		ExternalID: strings.TrimSpace(r.ExternalID),
@@ -153,6 +169,8 @@ func (r fileRow) toListing() (domain.Listing, bool) {
 		Currency:   currency,
 		Location:   emptyNil(r.Location),
 		URL:        emptyNil(r.URL),
+		Active:     r.Active,
+		LastSeenAt: lastSeen,
 	}, true
 }
 

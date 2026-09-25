@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestParseFile_JSON(t *testing.T) {
@@ -73,6 +74,32 @@ func TestParseJSON_rawTitleWithoutTrimID(t *testing.T) {
 	}
 	if got.RawTitle != "Toyota Corolla XEI 2.0 CVT" {
 		t.Fatalf("raw_title = %q", got.RawTitle)
+	}
+}
+
+func TestParseJSON_optionalFields(t *testing.T) {
+	path := writeTemp(t, "listings.json", `[
+		{"source":"file","external_id":"old","trim_id":1,"year":2019,"price":1},
+		{"source":"file","external_id":"off","trim_id":1,"year":2019,"price":1,
+		 "active":false,"observed_at":"2024-01-15T12:00:00Z"}
+	]`)
+
+	listings, skipped, err := ParseFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if skipped != 0 || len(listings) != 2 {
+		t.Fatalf("len=%d skipped=%d", len(listings), skipped)
+	}
+	if listings[0].Active != nil || !listings[0].LastSeenAt.IsZero() {
+		t.Fatalf("omitted optional = %+v", listings[0])
+	}
+	if listings[1].Active == nil || *listings[1].Active {
+		t.Fatalf("active = %v", listings[1].Active)
+	}
+	want := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+	if !listings[1].LastSeenAt.Equal(want) {
+		t.Fatalf("last_seen_at = %v", listings[1].LastSeenAt)
 	}
 }
 

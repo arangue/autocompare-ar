@@ -14,6 +14,7 @@ type Listing struct {
 	Currency   string    `json:"currency"`
 	Location   *string   `json:"location"`
 	URL        *string   `json:"url"`
+	Active     *bool     `json:"active"`
 	LastSeenAt time.Time `json:"last_seen_at"`
 }
 
