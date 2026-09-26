@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -57,11 +58,7 @@ func main() {
 	var listingRepo *postgres.ListingRepository
 	ctx := context.Background()
 	if needDB {
-		dbURL := os.Getenv("DATABASE_URL")
-		if dbURL == "" {
-			slog.Error("DATABASE_URL is not set")
-			os.Exit(1)
-		}
+		dbURL := databaseURL()
 
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
@@ -145,4 +142,35 @@ func main() {
 		"skipped", skipped,
 		"expired", expired,
 	)
+}
+
+// Same as Makefile: .env if present, else docker-compose default.
+func databaseURL() string {
+	loadDotEnv(".env")
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		return v
+	}
+	return "postgres://user:password@localhost:5435/autocompare_db?sslmode=disable"
+}
+
+func loadDotEnv(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		k, v, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		k, v = strings.TrimSpace(k), strings.TrimSpace(v)
+		if k == "" || os.Getenv(k) != "" {
+			continue
+		}
+		_ = os.Setenv(k, v)
+	}
 }

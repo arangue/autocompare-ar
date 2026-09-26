@@ -519,10 +519,12 @@ curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&year=2019'
 ```bash
 make ingest                                      # testdata/listings.json
 go run ./cmd/worker path/to/file.csv             # or set INGEST_FILE
-go run ./cmd/worker -dry-run testdata/listings.json
+go run ./cmd/worker -dry-run testdata/listings.titles.json   # first prod run: resolve titles, no writes
 go run ./cmd/worker -expire-days 14 testdata/listings.json   # upsert first, then expire
 INGEST_FILE= go run ./cmd/worker -expire-days 14             # expire only (no file)
 ```
+
+First production run is always `go run ./cmd/worker -dry-run testdata/listings.titles.json`. That file has `raw_title` and no `trim_id`, so it exercises alias Resolve. `-dry-run` logs matches and does not upsert. Needs Postgres (`make db-up`); if `DATABASE_URL` is unset, the worker uses `.env` or the same local default as `make`.
 
 `-expire-days` default 0 is a no-op. Expire runs **after** upsert: rows in the file get `last_seen_at=NOW()` and are not expired. Unset `INGEST_FILE` (the Makefile `.env` sets it) for expire-only. Rows are deactivated, not deleted.
 
@@ -547,5 +549,7 @@ JSON shape:
 ```
 
 `trim_id` must already exist in the catalog. Unknown trims are skipped.
+
+Instead of `trim_id`, a row may send `raw_title` (see `testdata/listings.titles.json`). The worker normalizes it and looks up `trim_aliases`. Unrecognized titles are skipped.
 
 GitHub remote: `git@github.com:arangue/autocompare-ar.git`
