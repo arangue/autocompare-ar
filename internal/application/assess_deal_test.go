@@ -24,6 +24,10 @@ func (f fakeListingRepo) Upsert(context.Context, domain.Listing) (bool, error) {
 	return false, nil
 }
 
+func (f fakeListingRepo) ExpireStale(context.Context, int) (int64, error) {
+	return 0, nil
+}
+
 func int64Ptr(v int64) *int64 { return &v }
 
 func TestAssessDeal_insufficientData(t *testing.T) {

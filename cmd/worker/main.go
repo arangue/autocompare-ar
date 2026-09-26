@@ -21,12 +21,27 @@ func main() {
 	slog.SetDefault(logger)
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
+	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
 	flag.Parse()
 
-	listings, skipped, err := loadListings()
-	if err != nil {
-		slog.Error("failed to load listings", "error", err)
+	path := flag.Arg(0)
+	if path == "" {
+		path = os.Getenv("INGEST_FILE")
+	}
+	if path == "" && *expireDays <= 0 {
+		slog.Error("provide a file path argument or INGEST_FILE, or -expire-days N")
 		os.Exit(1)
+	}
+
+	var listings []domain.Listing
+	skipped := 0
+	if path != "" {
+		var err error
+		listings, skipped, err = ingestion.ParseFile(path)
+		if err != nil {
+			slog.Error("failed to load listings", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	needResolve := false
@@ -37,10 +52,11 @@ func main() {
 		}
 	}
 
+	needDB := !*dryRun || needResolve
 	var aliasRepo domain.AliasRepository
 	var listingRepo *postgres.ListingRepository
 	ctx := context.Background()
-	if !*dryRun || needResolve {
+	if needDB {
 		dbURL := os.Getenv("DATABASE_URL")
 		if dbURL == "" {
 			slog.Error("DATABASE_URL is not set")
@@ -111,22 +127,22 @@ func main() {
 		}
 	}
 
+	expired := int64(0)
+	if !*dryRun && *expireDays > 0 {
+		var err error
+		expired, err = listingRepo.ExpireStale(ctx, *expireDays)
+		if err != nil {
+			slog.Error("expire failed", "error", err)
+			os.Exit(1)
+		}
+	}
+
 	slog.Info("ingest finished",
 		"dry_run", *dryRun,
 		"matched", len(listings),
 		"inserted", inserted,
 		"updated", updated,
 		"skipped", skipped,
+		"expired", expired,
 	)
-}
-
-func loadListings() ([]domain.Listing, int, error) {
-	path := flag.Arg(0)
-	if path == "" {
-		path = os.Getenv("INGEST_FILE")
-	}
-	if path == "" {
-		return nil, 0, errors.New("provide a file path argument or INGEST_FILE")
-	}
-	return ingestion.ParseFile(path)
 }

@@ -13,6 +13,7 @@ No uses el Dockerfile de la raíz ni Generate Domain: Railway le pega healthchec
 
 - Dockerfile path: `Dockerfile.worker` (Settings → Build)
 - Env: `DATABASE_URL=${{NOMBRE_CAJITA_POSTGRES.DATABASE_URL}}` y `INGEST_FILE=/testdata/listings.json`
+- Start command si querés expire: `/worker -expire-days 14` (el archivo sigue viniendo de `INGEST_FILE`). Solo expire: vaciá `INGEST_FILE` y `/worker -expire-days 14`
 - No pongas `EXPOSE` ni healthcheck HTTP en este servicio
 
 ## Variables

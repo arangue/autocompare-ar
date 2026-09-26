@@ -520,7 +520,11 @@ curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&year=2019'
 make ingest                                      # testdata/listings.json
 go run ./cmd/worker path/to/file.csv             # or set INGEST_FILE
 go run ./cmd/worker -dry-run testdata/listings.json
+go run ./cmd/worker -expire-days 14 testdata/listings.json   # upsert first, then expire
+INGEST_FILE= go run ./cmd/worker -expire-days 14             # expire only (no file)
 ```
+
+`-expire-days` default 0 is a no-op. Expire runs **after** upsert: rows in the file get `last_seen_at=NOW()` and are not expired. Unset `INGEST_FILE` (the Makefile `.env` sets it) for expire-only. Rows are deactivated, not deleted.
 
 It does not scrape CCA, ACARA, Mercado Libre, or classifieds HTML — see [DESIGN.md](DESIGN.md) §9.
 

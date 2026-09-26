@@ -17,6 +17,9 @@ type ListingRepository interface {
 	MarketSummary(ctx context.Context, trimID, year int) (MarketSummary, error)
 	// Upsert inserts or updates by (source, external_id). inserted is true on insert.
 	Upsert(ctx context.Context, listing Listing) (inserted bool, err error)
+	// ExpireStale sets active=false on listings not seen in the last days.
+	// days <= 0 is a no-op. Does not DELETE rows.
+	ExpireStale(ctx context.Context, days int) (int64, error)
 }
 
 type PricingRepository interface {

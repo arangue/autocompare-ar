@@ -107,3 +107,17 @@ func (r *ListingRepository) Upsert(ctx context.Context, listing domain.Listing) 
 	}
 	return inserted, nil
 }
+
+func (r *ListingRepository) ExpireStale(ctx context.Context, days int) (int64, error) {
+	if days <= 0 {
+		return 0, nil
+	}
+	tag, err := r.pool.Exec(ctx, `
+		UPDATE vehicle_listings
+		SET active = false
+		WHERE active AND last_seen_at < NOW() - make_interval(days => $1)`, days)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
