@@ -10,7 +10,7 @@ import (
 func TestUpsert_activeFalsePersists(t *testing.T) {
 	pool := catalogPool(t)
 	defer pool.Close()
-	repo := NewListingRepository(pool)
+	repo := NewListingRepository(pool, false)
 	ctx := context.Background()
 
 	off := false
@@ -66,7 +66,7 @@ func TestExpireStale_noop(t *testing.T) {
 func TestExpireStale_deactivatesOld(t *testing.T) {
 	pool := catalogPool(t)
 	defer pool.Close()
-	repo := NewListingRepository(pool)
+	repo := NewListingRepository(pool, false)
 	ctx := context.Background()
 
 	listing := domain.Listing{
@@ -118,5 +118,60 @@ func TestExpireStale_deactivatesOld(t *testing.T) {
 		if l.ExternalID == listing.ExternalID {
 			t.Fatal("stale listing still in market list")
 		}
+	}
+}
+
+func TestActiveWhere(t *testing.T) {
+	off := (&ListingRepository{}).activeWhere()
+	on := (&ListingRepository{excludeSeed: true}).activeWhere()
+	if off != "trim_id = $1 AND year = $2 AND active = true" {
+		t.Fatalf("off = %q", off)
+	}
+	if on != off+" AND source <> 'seed'" {
+		t.Fatalf("on = %q", on)
+	}
+}
+
+func TestExcludeSeed_sameRuleForListAndMarket(t *testing.T) {
+	pool := catalogPool(t)
+	defer pool.Close()
+	ctx := context.Background()
+	off := NewListingRepository(pool, false)
+	on := NewListingRepository(pool, true)
+
+	seed := domain.Listing{Source: "seed", ExternalID: "e5-502-seed", TrimID: 1, Year: 2099, Price: 100, Currency: "ARS"}
+	live := domain.Listing{Source: "file", ExternalID: "e5-502-file", TrimID: 1, Year: 2099, Price: 200, Currency: "ARS"}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(),
+			`DELETE FROM vehicle_listings WHERE external_id IN ('e5-502-seed', 'e5-502-file')`)
+	})
+	for _, listing := range []domain.Listing{seed, live} {
+		if _, err := off.Upsert(ctx, listing); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	offMarket, err := off.MarketSummary(ctx, 1, 2099)
+	if err != nil {
+		t.Fatal(err)
+	}
+	offList, err := off.ListByTrimYear(ctx, 1, 2099, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if offMarket.Count != 2 || len(offList) != 2 {
+		t.Fatalf("flag off market=%d list=%d", offMarket.Count, len(offList))
+	}
+
+	onMarket, err := on.MarketSummary(ctx, 1, 2099)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onList, err := on.ListByTrimYear(ctx, 1, 2099, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if onMarket.Count != 1 || len(onList) != 1 || onList[0].Source != "file" {
+		t.Fatalf("flag on market=%d list=%v", onMarket.Count, onList)
 	}
 }

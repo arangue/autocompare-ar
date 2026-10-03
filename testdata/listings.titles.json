@@ -1,9 +1,86 @@
 [
   {
     "source": "file",
-    "external_id": "demo-1",
+    "external_id": "demo-xei-cvt",
     "year": 2019,
     "price": 24800000,
     "raw_title": "Toyota Corolla XEI 2.0 CVT"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-xei",
+    "year": 2019,
+    "price": 24100000,
+    "raw_title": "Corolla XEi"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-xei-pack",
+    "year": 2019,
+    "price": 25500000,
+    "raw_title": "Toyota Corolla XEi Pack"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-xei-order-year",
+    "year": 2019,
+    "price": 23900000,
+    "raw_title": "Toyota Corolla 2.0 XEI CVT 2019"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-xli-cvt",
+    "year": 2019,
+    "price": 22100000,
+    "raw_title": "Toyota Corolla XLi 1.8 CVT"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-xli",
+    "year": 2019,
+    "price": 21500000,
+    "raw_title": "Toyota Corolla XLi"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-golf",
+    "year": 2019,
+    "price": 19900000,
+    "raw_title": "Volkswagen Golf Comfortline"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-golf-vw-year",
+    "year": 2019,
+    "price": 19200000,
+    "raw_title": "VW Golf Comfortline 2019"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-golf-short",
+    "year": 2019,
+    "price": 18800000,
+    "raw_title": "Golf Comfortline"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-cronos-13",
+    "year": 2019,
+    "price": 16500000,
+    "raw_title": "Fiat Cronos Drive 1.3"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-cronos",
+    "year": 2019,
+    "price": 15900000,
+    "raw_title": "Fiat Cronos Drive"
+  },
+  {
+    "source": "file",
+    "external_id": "demo-cronos-short",
+    "year": 2019,
+    "price": 15400000,
+    "raw_title": "Cronos Drive 1.3"
   }
 ]

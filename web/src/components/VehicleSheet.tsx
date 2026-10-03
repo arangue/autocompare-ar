@@ -73,6 +73,12 @@ function groupFeaturesByCategory(
   return grouped;
 }
 
+function sourceLabel(source: string) {
+  if (source === "seed") return "Demostración";
+  if (source === "file") return "Carga manual";
+  return source;
+}
+
 export function VehicleSheet() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -444,7 +450,12 @@ export function VehicleSheet() {
                   className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="font-medium text-zinc-900">{formatARS(listing.price)}</p>
+                    <p className="font-medium text-zinc-900">
+                      {formatARS(listing.price)}{" "}
+                      <span className="text-xs font-normal text-zinc-500">
+                        {sourceLabel(listing.source)}
+                      </span>
+                    </p>
                     <p className="text-sm text-zinc-600">
                       {listing.km != null ? formatKm(listing.km) : "Km no informado"}
                       {listing.location ? ` · ${listing.location}` : ""}

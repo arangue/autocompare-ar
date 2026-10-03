@@ -77,7 +77,7 @@ func main() {
 		}
 
 		aliasRepo = postgres.NewAliasRepository(pool)
-		listingRepo = postgres.NewListingRepository(pool)
+		listingRepo = postgres.NewListingRepository(pool, false)
 	}
 
 	inserted, updated := 0, 0

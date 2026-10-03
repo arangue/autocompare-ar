@@ -24,6 +24,10 @@ No uses el Dockerfile de la raíz ni Generate Domain: Railway le pega healthchec
 - No pongas `INGEST_FILE` ni `NEXT_PUBLIC` en la API
 - No uses localhost en prod
 
+## Seed de demostración
+
+Cuando un trim y año (hoy Corolla XEi 2019) tenga al menos 5 listings que no son `source=seed`, setear `MARKET_EXCLUDE_SEED=true` en la API y Redeploy. No el día 1: con el flag apagado el demo sigue contando el seed. No borra filas.
+
 ## Comprobar
 
 - API: `https://<api>/health` → `{"status":"ok"}`

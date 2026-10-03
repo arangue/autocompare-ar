@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -55,7 +56,7 @@ func main() {
 	}
 
 	vehicleRepo := postgres.NewVehicleRepository(pool)
-	listingRepo := postgres.NewListingRepository(pool)
+	listingRepo := postgres.NewListingRepository(pool, excludeSeedFromEnv())
 	pricingRepo := postgres.NewPricingRepository(pool)
 	listBrands := application.NewListBrands(vehicleRepo)
 	listModelsByBrand := application.NewListModelsByBrand(vehicleRepo)
@@ -104,4 +105,13 @@ func main() {
 	}
 
 	slog.Info("server stopped")
+}
+
+func excludeSeedFromEnv() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("MARKET_EXCLUDE_SEED"))) {
+	case "1", "true":
+		return true
+	default:
+		return false
+	}
 }

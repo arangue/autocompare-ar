@@ -14,18 +14,29 @@ import (
 var ErrUnknownTrim = errors.New("unknown trim_id")
 
 type ListingRepository struct {
-	pool *pgxpool.Pool
+	pool        *pgxpool.Pool
+	excludeSeed bool
 }
 
-func NewListingRepository(pool *pgxpool.Pool) *ListingRepository {
-	return &ListingRepository{pool: pool}
+func NewListingRepository(pool *pgxpool.Pool, excludeSeed bool) *ListingRepository {
+	return &ListingRepository{pool: pool, excludeSeed: excludeSeed}
+}
+
+// activeWhere is the shared filter for the list and the median.
+// excludeSeed adds source <> 'seed' to both, so deal and listings use the same rows.
+func (r *ListingRepository) activeWhere() string {
+	where := "trim_id = $1 AND year = $2 AND active = true"
+	if r.excludeSeed {
+		where += " AND source <> 'seed'"
+	}
+	return where
 }
 
 func (r *ListingRepository) ListByTrimYear(ctx context.Context, trimID, year, limit int) ([]domain.Listing, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT id, source, external_id, trim_id, year, km, price, currency, location, url, last_seen_at
 		FROM vehicle_listings
-		WHERE trim_id = $1 AND year = $2 AND active = true
+		WHERE `+r.activeWhere()+`
 		ORDER BY price ASC
 		LIMIT $3`, trimID, year, limit)
 	if err != nil {
@@ -58,7 +69,7 @@ func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int)
 			(percentile_cont(0.5) WITHIN GROUP (ORDER BY price))::bigint,
 			(percentile_cont(0.75) WITHIN GROUP (ORDER BY price))::bigint
 		FROM vehicle_listings
-		WHERE trim_id = $1 AND year = $2 AND active = true`, trimID, year).Scan(
+		WHERE `+r.activeWhere(), trimID, year).Scan(
 		&summary.Count,
 		&summary.Minimum,
 		&summary.Maximum,
