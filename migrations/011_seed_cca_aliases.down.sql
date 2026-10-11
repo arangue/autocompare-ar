@@ -1,0 +1,7 @@
+DELETE FROM trim_aliases
+WHERE source = 'cca'
+  AND raw_name IN (
+    'TOYOTA COROLLA 4P 2,0 XEI CVT 2024',
+    'VOLKSWAGEN GOLF 5P 1,4 TSI COMFORTLINE 2018',
+    'FIAT CRONOS 4P 1,3 DRIVE GSE'
+  );

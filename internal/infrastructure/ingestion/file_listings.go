@@ -2,11 +2,10 @@ package ingestion
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -14,21 +13,16 @@ import (
 	"github.com/arangue/autocompare-ar/internal/domain"
 )
 
-// ParseFile reads JSON (array) or CSV listings. Invalid rows are skipped.
+// DefaultRegistry is the standard registry used for file parsing.
+var DefaultRegistry = NewDefaultRegistry()
+
+// ParseFile reads JSON or CSV listings. Price-guide PDFs use -source acara or -source cca.
 func ParseFile(path string) (listings []domain.Listing, skipped int, err error) {
-	data, err := os.ReadFile(path)
+	parser, err := DefaultRegistry.ParserFor(path)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".json":
-		return parseJSON(data)
-	case ".csv":
-		return parseCSV(data)
-	default:
-		return nil, 0, fmt.Errorf("unsupported ingest file type %q", filepath.Ext(path))
-	}
+	return parser.Parse(context.Background(), path)
 }
 
 type fileRow struct {

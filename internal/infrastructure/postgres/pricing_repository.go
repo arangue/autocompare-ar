@@ -36,3 +36,19 @@ func (r *PricingRepository) ListReferences(ctx context.Context, trimID, year int
 	}
 	return references, rows.Err()
 }
+
+// UpsertReference inserts or updates one guide price on (trim_id, year, source).
+func (r *PricingRepository) UpsertReference(ctx context.Context, ref domain.ReferencePrice) (inserted bool, err error) {
+	err = r.pool.QueryRow(ctx, `
+		INSERT INTO price_references (trim_id, year, source, kind, price, currency, observed_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (trim_id, year, source) DO UPDATE SET
+			kind = EXCLUDED.kind,
+			price = EXCLUDED.price,
+			currency = EXCLUDED.currency,
+			observed_at = EXCLUDED.observed_at
+		RETURNING (xmax = 0)`,
+		ref.TrimID, ref.Year, ref.Source, ref.Kind, ref.Price, ref.Currency, ref.ObservedAt,
+	).Scan(&inserted)
+	return inserted, err
+}

@@ -1,0 +1,7 @@
+DELETE FROM trim_aliases
+WHERE source = 'acara'
+  AND raw_name IN (
+    'TOYOTA COROLLA 2.0 XEI CVT',
+    'VOLKSWAGEN GOLF 1.4 TSI COMFORTLINE MT',
+    'FIAT CRONOS 1.3 GSE DRIVE MT'
+  );

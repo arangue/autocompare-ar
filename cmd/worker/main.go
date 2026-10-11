@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -14,6 +15,9 @@ import (
 	"github.com/arangue/autocompare-ar/internal/domain"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/normalize"
+	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/acara"
+	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/cca"
+	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/guide"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/postgres"
 )
 
@@ -23,11 +27,28 @@ func main() {
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
 	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
+	source := flag.String("source", "", "acara or cca loads a price-guide PDF into price_references")
+	observed := flag.String("observed", "", "guide date YYYY-MM-DD (default today)")
 	flag.Parse()
 
 	path := flag.Arg(0)
 	if path == "" {
 		path = os.Getenv("INGEST_FILE")
+	}
+	if *source == "acara" || *source == "cca" {
+		if path == "" {
+			slog.Error("provide the guide PDF path")
+			os.Exit(1)
+		}
+		if err := runGuide(path, *observed, *dryRun, *source); err != nil {
+			slog.Error("guide ingest failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *source != "" {
+		slog.Error("unknown source", "source", *source)
+		os.Exit(1)
 	}
 	if path == "" && *expireDays <= 0 {
 		slog.Error("provide a file path argument or INGEST_FILE, or -expire-days N")
@@ -142,6 +163,139 @@ func main() {
 		"skipped", skipped,
 		"expired", expired,
 	)
+}
+
+func runGuide(path, observedRaw string, dryRun bool, kind string) error {
+	observed := time.Now().UTC()
+	if observedRaw != "" {
+		t, err := time.Parse("2006-01-02", observedRaw)
+		if err != nil {
+			return fmt.Errorf("observed: %w", err)
+		}
+		observed = t.UTC()
+	}
+	var (
+		rows        []guide.Row
+		err         error
+		refSource   string
+		aliasSource string
+	)
+	switch kind {
+	case "acara":
+		rows, err = acara.ParseFile(path, observed)
+		refSource, aliasSource = "ACARA", "acara"
+	case "cca":
+		rows, err = cca.ParseFile(path, observed)
+		refSource, aliasSource = "CCA", "cca"
+	default:
+		return fmt.Errorf("unknown guide source %s", kind)
+	}
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	aliases := postgres.NewAliasRepository(pool)
+	prices := postgres.NewPricingRepository(pool)
+	cache := map[string]resolveHit{}
+	matched, skipped, inserted, updated := 0, 0, 0, 0
+	for _, row := range rows {
+		trimID, ok, err := resolveGuide(ctx, aliases, cache, row, aliasSource)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			skipped++
+			continue
+		}
+		matched++
+		for _, cell := range row.Cells {
+			if dryRun {
+				slog.Info("dry-run reference",
+					"trim_id", trimID,
+					"year", cell.Year,
+					"price", cell.Price,
+					"currency", row.Currency,
+				)
+				continue
+			}
+			wasInsert, err := prices.UpsertReference(ctx, domain.ReferencePrice{
+				TrimID:     trimID,
+				Year:       cell.Year,
+				Source:     refSource,
+				Kind:       "guide",
+				Price:      cell.Price,
+				Currency:   row.Currency,
+				ObservedAt: observed,
+			})
+			if err != nil {
+				return fmt.Errorf("upsert %s %s %d: %w", row.Brand, row.Trim, cell.Year, err)
+			}
+			if wasInsert {
+				inserted++
+			} else {
+				updated++
+			}
+		}
+	}
+	slog.Info("guide ingest finished",
+		"source", refSource,
+		"dry_run", dryRun,
+		"rows", len(rows),
+		"matched", matched,
+		"skipped", skipped,
+		"inserted", inserted,
+		"updated", updated,
+	)
+	return nil
+}
+
+type resolveHit struct {
+	id int
+	ok bool
+}
+
+func resolveGuide(ctx context.Context, aliases domain.AliasRepository, cache map[string]resolveHit, row guide.Row, aliasSource string) (int, bool, error) {
+	for _, key := range row.Keys() {
+		norm := normalize.Title(key)
+		for _, source := range []string{aliasSource, "file"} {
+			cacheKey := source + "\x00" + norm
+			if hit, ok := cache[cacheKey]; ok {
+				if hit.ok {
+					return hit.id, true, nil
+				}
+				continue
+			}
+			id, ok, err := aliases.Resolve(ctx, source, norm)
+			if err != nil {
+				return 0, false, err
+			}
+			cache[cacheKey] = resolveHit{id: id, ok: ok}
+			if ok {
+				return id, true, nil
+			}
+		}
+	}
+	return 0, false, nil
+}
+
+func openPool(ctx context.Context) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, databaseURL())
+	if err != nil {
+		return nil, err
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
+	return pool, nil
 }
 
 // Same as Makefile: .env if present, else docker-compose default.
