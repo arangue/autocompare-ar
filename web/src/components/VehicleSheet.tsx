@@ -139,7 +139,12 @@ export function VehicleSheet() {
           return;
         }
         const selectedYear = defaultYear(detail, initialYear);
-        setTrim(detail);
+        const shown =
+          initialYear === selectedYear ? detail : await getTrim(trimId, selectedYear);
+        if (cancelled) {
+          return;
+        }
+        setTrim(shown);
         setYear(selectedYear);
         await refreshYearData(selectedYear);
       })
@@ -172,6 +177,9 @@ export function VehicleSheet() {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("year", String(nextYear));
     router.replace(`/trims/${trimId}?${nextParams.toString()}`, { scroll: false });
+    void getTrim(trimId, nextYear)
+      .then(setTrim)
+      .catch(() => setError("No pudimos cargar esta versión."));
     void refreshYearData(nextYear);
   }
 

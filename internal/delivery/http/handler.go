@@ -28,7 +28,7 @@ type searchTrimsUseCase interface {
 }
 
 type getTrimUseCase interface {
-	Execute(ctx context.Context, id int) (domain.TrimDetail, error)
+	Execute(ctx context.Context, id int, year int) (domain.TrimDetail, error)
 }
 
 type listListingsUseCase interface {
@@ -145,7 +145,11 @@ func (h *Handler) GetTrim(w http.ResponseWriter, r *http.Request) {
 		requestedYear = &y
 	}
 
-	trim, err := h.getTrim.Execute(r.Context(), trimIDInt)
+	year := 0
+	if requestedYear != nil {
+		year = *requestedYear
+	}
+	trim, err := h.getTrim.Execute(r.Context(), trimIDInt, year)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "trim not found")

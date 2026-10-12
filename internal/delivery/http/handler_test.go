@@ -42,7 +42,7 @@ type stubGetTrim struct {
 	byID   map[int]domain.TrimDetail
 }
 
-func (s stubGetTrim) Execute(_ context.Context, id int) (domain.TrimDetail, error) {
+func (s stubGetTrim) Execute(_ context.Context, id int, _ int) (domain.TrimDetail, error) {
 	if s.err != nil {
 		return domain.TrimDetail{}, s.err
 	}

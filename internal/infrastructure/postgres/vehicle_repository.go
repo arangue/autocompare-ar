@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -96,7 +97,7 @@ func (r *VehicleRepository) SearchTrims(ctx context.Context, query string, limit
 	return trims, rows.Err()
 }
 
-func (r *VehicleRepository) GetTrim(ctx context.Context, id int) (domain.TrimDetail, error) {
+func (r *VehicleRepository) GetTrim(ctx context.Context, id int, year int) (domain.TrimDetail, error) {
 	var d domain.TrimDetail
 	query := `SELECT
 				t.id,
@@ -134,6 +135,9 @@ func (r *VehicleRepository) GetTrim(ctx context.Context, id int) (domain.TrimDet
 		return domain.TrimDetail{}, err
 	}
 	if err := r.loadTrimFeatures(ctx, id, &d); err != nil {
+		return domain.TrimDetail{}, err
+	}
+	if err := r.applyEquipment(ctx, &d, year); err != nil {
 		return domain.TrimDetail{}, err
 	}
 	return d, nil
@@ -179,4 +183,55 @@ func (r *VehicleRepository) loadTrimFeatures(ctx context.Context, trimID int, d 
 		d.Features = append(d.Features, f)
 	}
 	return rows.Err()
+}
+
+func (r *VehicleRepository) applyEquipment(ctx context.Context, d *domain.TrimDetail, year int) error {
+	q := `SELECT engine, displacement_cc, horsepower, transmission, fuel,
+	             doors, seats, consumption_city, consumption_highway, features
+	      FROM trim_equipment te
+	      JOIN equipment_sheets es ON es.url = te.sheet_url
+	      WHERE te.trim_id = $1`
+	var row pgx.Row
+	if year > 0 {
+		row = r.pool.QueryRow(ctx, q+` AND te.year = $2`, d.TrimID, year)
+	} else {
+		row = r.pool.QueryRow(ctx, q+` ORDER BY te.year DESC LIMIT 1`, d.TrimID)
+	}
+
+	var (
+		engine, transmission, fuel             string
+		displacement, horsepower, doors, seats *int
+		city, highway                          *float64
+		raw                                    []byte
+	)
+	err := row.Scan(&engine, &displacement, &horsepower, &transmission, &fuel, &doors, &seats, &city, &highway, &raw)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	if engine != "" || transmission != "" || fuel != "" || horsepower != nil {
+		d.Specs = &domain.VehicleSpec{
+			Engine:             engine,
+			DisplacementCC:     displacement,
+			Horsepower:         horsepower,
+			Transmission:       transmission,
+			Fuel:               fuel,
+			Doors:              doors,
+			Seats:              seats,
+			ConsumptionCity:    city,
+			ConsumptionHighway: highway,
+		}
+	}
+	var features []domain.VehicleFeature
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &features); err != nil {
+			return err
+		}
+	}
+	if len(features) > 0 {
+		d.Features = features
+	}
+	return nil
 }

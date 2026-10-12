@@ -14,6 +14,6 @@ func NewGetTrimService(vehicleRepository domain.VehicleRepository) *GetTrim {
 	return &GetTrim{vehicleRepository: vehicleRepository}
 }
 
-func (u *GetTrim) Execute(ctx context.Context, id int) (domain.TrimDetail, error) {
-	return u.vehicleRepository.GetTrim(ctx, id)
+func (u *GetTrim) Execute(ctx context.Context, id int, year int) (domain.TrimDetail, error) {
+	return u.vehicleRepository.GetTrim(ctx, id, year)
 }

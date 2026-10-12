@@ -8,7 +8,7 @@ import (
 )
 
 type trimGetter interface {
-	Execute(ctx context.Context, id int) (domain.TrimDetail, error)
+	Execute(ctx context.Context, id int, year int) (domain.TrimDetail, error)
 }
 
 type marketGetter interface {
@@ -64,7 +64,7 @@ func (u *CompareTrims) Execute(ctx context.Context, trimIDs []int, year int) (Co
 	index := make(map[string]int)
 
 	for _, id := range trimIDs {
-		detail, err := u.getTrim.Execute(ctx, id)
+		detail, err := u.getTrim.Execute(ctx, id, year)
 		if err != nil {
 			return CompareResult{}, err
 		}

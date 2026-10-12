@@ -11,7 +11,7 @@ type fakeTrimGetter struct {
 	byID map[int]domain.TrimDetail
 }
 
-func (f fakeTrimGetter) Execute(_ context.Context, id int) (domain.TrimDetail, error) {
+func (f fakeTrimGetter) Execute(_ context.Context, id int, _ int) (domain.TrimDetail, error) {
 	detail, ok := f.byID[id]
 	if !ok {
 		return domain.TrimDetail{}, domain.ErrNotFound

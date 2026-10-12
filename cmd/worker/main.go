@@ -10,15 +10,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/arangue/autocompare-ar/internal/domain"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion"
+	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/carsbase"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/normalize"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/acara"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/cca"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/guide"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/postgres"
+	"github.com/arangue/autocompare-ar/migrations"
 )
 
 func main() {
@@ -27,7 +32,7 @@ func main() {
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
 	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
-	source := flag.String("source", "", "acara or cca loads a price-guide PDF into price_references")
+	source := flag.String("source", "", "acara, cca, or carsbase")
 	observed := flag.String("observed", "", "guide date YYYY-MM-DD (default today)")
 	flag.Parse()
 
@@ -35,10 +40,17 @@ func main() {
 	if path == "" {
 		path = os.Getenv("INGEST_FILE")
 	}
-	if *source == "acara" || *source == "cca" {
+	if *source == "acara" || *source == "cca" || *source == "carsbase" {
 		if path == "" {
-			slog.Error("provide the guide PDF path")
+			slog.Error("provide a file path")
 			os.Exit(1)
+		}
+		if *source == "carsbase" {
+			if err := runCarsbase(path, *dryRun); err != nil {
+				slog.Error("carsbase ingest failed", "error", err)
+				os.Exit(1)
+			}
+			return
 		}
 		if err := runGuide(path, *observed, *dryRun, *source); err != nil {
 			slog.Error("guide ingest failed", "error", err)
@@ -284,6 +296,61 @@ func resolveGuide(ctx context.Context, aliases domain.AliasRepository, cache map
 		}
 	}
 	return 0, false, nil
+}
+
+func runCarsbase(path string, dryRun bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	if !dryRun {
+		if err := applyMigrations(databaseURL()); err != nil {
+			return err
+		}
+	}
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	stats, err := carsbase.Load(ctx, pool, path, dryRun)
+	if err != nil {
+		return err
+	}
+	slog.Info("carsbase ingest finished",
+		"dry_run", dryRun,
+		"sheets", stats.Sheets,
+		"dropped", stats.Dropped,
+		"trims", stats.Trims,
+		"links", stats.Links,
+	)
+	return nil
+}
+
+func applyMigrations(dbURL string) error {
+	source, err := iofs.New(migrations.FS, ".")
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithSourceInstance("iofs", source, migrateDatabaseURL(dbURL))
+	if err != nil {
+		return err
+	}
+	defer m.Close() //nolint:errcheck
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+	return nil
+}
+
+func migrateDatabaseURL(dbURL string) string {
+	switch {
+	case strings.HasPrefix(dbURL, "postgresql://"):
+		return "pgx5://" + strings.TrimPrefix(dbURL, "postgresql://")
+	case strings.HasPrefix(dbURL, "postgres://"):
+		return "pgx5://" + strings.TrimPrefix(dbURL, "postgres://")
+	default:
+		return dbURL
+	}
 }
 
 func openPool(ctx context.Context) (*pgxpool.Pool, error) {
