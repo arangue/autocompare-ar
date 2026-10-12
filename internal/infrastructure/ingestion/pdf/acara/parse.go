@@ -41,6 +41,7 @@ var (
 
 // ParseText parses the reading-order text of an ACARA guide.
 // ponytail: model is the leading words until a displacement or body word (Hybrid, Variant).
+// A grade already seen on this model (XEI after "2.0 XEI") does not replace the model.
 // Two guide lines that normalize to the same alias overwrite the same trim/year on upsert.
 func ParseText(text string, observed time.Time) ([]Row, error) {
 	matches := headerRe.FindAllStringSubmatchIndex(text, -1)
@@ -52,11 +53,13 @@ func ParseText(text string, observed time.Time) ([]Row, error) {
 	brand := ""
 	// ponytail: first guide line for a key/year wins. Later list codes (L20 vs L23) would overwrite.
 	seen := map[string]struct{}{}
+	grades := map[string]struct{}{}
 	for i, m := range matches {
 		nextBrand := strings.TrimSpace(text[m[2]:m[3]])
 		if nextBrand != brand {
 			brand = nextBrand
 			model = ""
+			clear(grades)
 		}
 		years := yearRe.FindAllString(text[m[4]:m[5]], -1)
 		end := len(text)
@@ -64,7 +67,7 @@ func ParseText(text string, observed time.Time) ([]Row, error) {
 			end = matches[i+1][0]
 		}
 		var page []Row
-		page, model = scanSection(text[m[1]:end], brand, model, years, observed)
+		page, model = scanSection(text[m[1]:end], brand, model, grades, years, observed)
 		for _, row := range page {
 			row.Cells = unseenCells(row, seen)
 			if len(row.Cells) == 0 {
@@ -76,7 +79,7 @@ func ParseText(text string, observed time.Time) ([]Row, error) {
 	return rows, nil
 }
 
-func scanSection(section, brand, model string, years []string, observed time.Time) ([]Row, string) {
+func scanSection(section, brand, model string, grades map[string]struct{}, years []string, observed time.Time) ([]Row, string) {
 	n := 1 + len(years)
 	var rows []Row
 	i := 0
@@ -98,7 +101,7 @@ func scanSection(section, brand, model string, years []string, observed time.Tim
 			continue
 		}
 		var trim string
-		model, trim = splitDesc(desc, model)
+		model, trim = splitDesc(desc, model, grades)
 		row := Row{Brand: brand, Model: model, Trim: trim, Currency: curr}
 		row.Cells = cells(tokens, years, observed)
 		if len(row.Cells) > 0 && strings.TrimSpace(trim) != "" {
@@ -225,7 +228,7 @@ func parseAmount(raw string) (int64, bool) {
 	return n, true
 }
 
-func splitDesc(desc, model string) (string, string) {
+func splitDesc(desc, model string, grades map[string]struct{}) (string, string) {
 	fields := strings.Fields(desc)
 	if len(fields) == 0 {
 		return model, ""
@@ -234,10 +237,40 @@ func splitDesc(desc, model string) (string, string) {
 	for i < len(fields) && !isTrimStart(fields[i]) {
 		i++
 	}
-	if i == 0 {
+	if i == 0 || (model != "" && seenGrade(grades, fields[:i])) {
+		noteGrades(grades, fields)
 		return model, strings.Join(fields, " ")
 	}
+	clear(grades)
+	noteGrades(grades, fields[i:])
 	return strings.Join(fields[:i], " "), strings.Join(fields[i:], " ")
+}
+
+func noteGrades(grades map[string]struct{}, fields []string) {
+	for _, f := range fields {
+		if isTrimStart(f) {
+			continue
+		}
+		grades[strings.ToUpper(f)] = struct{}{}
+	}
+}
+
+func seenGrade(grades map[string]struct{}, fields []string) bool {
+	if len(fields) == 0 {
+		return false
+	}
+	for _, f := range fields {
+		if _, ok := grades[strings.ToUpper(f)]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func clear(m map[string]struct{}) {
+	for k := range m {
+		delete(m, k)
+	}
 }
 
 func isTrimStart(tok string) bool {

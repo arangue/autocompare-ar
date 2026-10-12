@@ -1,7 +1,11 @@
 export function formatARS(amount: number): string {
+  return formatMoney(amount, "ARS");
+}
+
+export function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "ARS",
+    currency: currency === "USD" ? "USD" : "ARS",
     maximumFractionDigits: 0,
   }).format(amount);
 }

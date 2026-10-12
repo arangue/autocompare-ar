@@ -13,7 +13,7 @@ import {
   getReferences,
   getTrim,
 } from "@/lib/api";
-import { formatARS, formatARSCompact, formatKm } from "@/lib/format";
+import { formatARS, formatARSCompact, formatKm, formatMoney } from "@/lib/format";
 import type {
   DealAssessment,
   Listing,
@@ -253,6 +253,9 @@ export function VehicleSheet() {
   }
 
   const years = yearOptions(trim.year_from, trim.year_to);
+  if (year != null && !years.includes(year)) {
+    years.unshift(year);
+  }
   const featuresByCategory = groupFeaturesByCategory(trim.features);
 
   return (
@@ -389,7 +392,7 @@ export function VehicleSheet() {
                         {referenceKindLabel(reference.kind)}
                       </td>
                       <td className="py-3 font-medium text-zinc-900">
-                        {formatARS(reference.price)}
+                        {formatMoney(reference.price, reference.currency)}
                       </td>
                     </tr>
                   ))}

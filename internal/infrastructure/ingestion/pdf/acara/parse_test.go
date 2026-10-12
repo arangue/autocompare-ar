@@ -47,6 +47,26 @@ func TestParseText_guideColumns(t *testing.T) {
 	assertCell(t, cronos, 2019, 15822200)
 }
 
+func TestParseText_gradeBeforeDisplacementKeepsModel(t *testing.T) {
+	const sample = `Guía Oficial de Precios TOYOTA 0km 2025 2024 2023 2022 2021 2020 2019 2018 2017 2016 2015 2014 2013 2012 2011 Corolla 2.0 XEI CVT (170cv) (L23) $ 48.410.000 - - - - - - - - - - - - - - - XEI 1.8 MT (136cv) (L12) $ - - - - - - - - - - - - 14.492.500 13.767.900 13.079.500 - Etios 1.5 XLS MT (103cv) $ 20.000.000 - - - - - - - - - - - - - - - `
+	observed := time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC)
+	rows, err := ParseText(sample, observed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("rows = %d, want 3", len(rows))
+	}
+	xei := rows[1]
+	if xei.Model != "Corolla" || xei.Keys()[0] != "TOYOTA Corolla XEI 1.8 MT" {
+		t.Fatalf("xei = %+v key %q", xei, xei.Keys()[0])
+	}
+	assertCell(t, xei, 2012, 13079500)
+	if rows[2].Model != "Etios" || rows[2].Keys()[0] != "TOYOTA Etios 1.5 XLS MT" {
+		t.Fatalf("etios = %+v key %q", rows[2], rows[2].Keys()[0])
+	}
+}
+
 func TestParseAmount_fullUnits(t *testing.T) {
 	n, ok := parseAmount("48.410.000")
 	if !ok || n != 48410000 {

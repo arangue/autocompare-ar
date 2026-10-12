@@ -32,13 +32,20 @@ func main() {
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
 	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
-	source := flag.String("source", "", "acara, cca, or carsbase")
+	source := flag.String("source", "", "acara, cca, carsbase, or link")
 	observed := flag.String("observed", "", "guide date YYYY-MM-DD (default today)")
 	flag.Parse()
 
 	path := flag.Arg(0)
 	if path == "" {
 		path = os.Getenv("INGEST_FILE")
+	}
+	if *source == "link" {
+		if err := runLink(*dryRun); err != nil {
+			slog.Error("guide link failed", "error", err)
+			os.Exit(1)
+		}
+		return
 	}
 	if *source == "acara" || *source == "cca" || *source == "carsbase" {
 		if path == "" {
@@ -187,18 +194,17 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 		observed = t.UTC()
 	}
 	var (
-		rows        []guide.Row
-		err         error
-		refSource   string
-		aliasSource string
+		rows      []guide.Row
+		err       error
+		refSource string
 	)
 	switch kind {
 	case "acara":
 		rows, err = acara.ParseFile(path, observed)
-		refSource, aliasSource = "ACARA", "acara"
+		refSource = "ACARA"
 	case "cca":
 		rows, err = cca.ParseFile(path, observed)
-		refSource, aliasSource = "CCA", "cca"
+		refSource = "CCA"
 	default:
 		return fmt.Errorf("unknown guide source %s", kind)
 	}
@@ -219,20 +225,23 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 	}
 	defer pool.Close()
 
-	aliases := postgres.NewAliasRepository(pool)
 	prices := postgres.NewPricingRepository(pool)
-	cache := map[string]resolveHit{}
+	catalog, err := loadCatalog(ctx, pool)
+	if err != nil {
+		return err
+	}
 	matched, stored, linked := 0, 0, 0
 	for _, row := range rows {
-		trimID, ok, err := resolveGuide(ctx, aliases, cache, row, aliasSource)
-		if err != nil {
-			return err
-		}
-		if ok {
-			matched++
-		}
+		rowMatched := false
 		for _, cell := range row.Cells {
+			trimID, ok := guide.Match(row.Brand, row.Model, row.Trim, cell.Year, catalog)
+			if ok {
+				rowMatched = true
+			}
 			if dryRun {
+				if ok {
+					linked++
+				}
 				continue
 			}
 			if _, err := prices.UpsertGuidePrice(ctx, refSource, row.Brand, row.Model, row.Trim, row.Currency, cell.Year, cell.Price, observed); err != nil {
@@ -255,6 +264,9 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 			}
 			linked++
 		}
+		if rowMatched {
+			matched++
+		}
 	}
 	slog.Info("guide ingest finished",
 		"source", refSource,
@@ -267,33 +279,101 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 	return nil
 }
 
-type resolveHit struct {
-	id int
-	ok bool
-}
+func runLink(dryRun bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
 
-func resolveGuide(ctx context.Context, aliases domain.AliasRepository, cache map[string]resolveHit, row guide.Row, aliasSource string) (int, bool, error) {
-	for _, key := range row.Keys() {
-		norm := normalize.Title(key)
-		for _, source := range []string{aliasSource, "file"} {
-			cacheKey := source + "\x00" + norm
-			if hit, ok := cache[cacheKey]; ok {
-				if hit.ok {
-					return hit.id, true, nil
-				}
-				continue
-			}
-			id, ok, err := aliases.Resolve(ctx, source, norm)
-			if err != nil {
-				return 0, false, err
-			}
-			cache[cacheKey] = resolveHit{id: id, ok: ok}
-			if ok {
-				return id, true, nil
+	catalog, err := loadCatalog(ctx, pool)
+	if err != nil {
+		return err
+	}
+	prices := postgres.NewPricingRepository(pool)
+	rows, err := pool.Query(ctx, `
+		SELECT source, brand, model, trim_name, year, price, currency, observed_at
+		FROM guide_prices`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	scanned, linked := 0, 0
+	for rows.Next() {
+		var source, brand, model, trimName, currency string
+		var year int
+		var price int64
+		var observed time.Time
+		if err := rows.Scan(&source, &brand, &model, &trimName, &year, &price, &currency, &observed); err != nil {
+			return err
+		}
+		scanned++
+		trimID, ok := guide.Match(brand, model, trimName, year, catalog)
+		if !ok {
+			continue
+		}
+		if !dryRun {
+			if _, err := prices.UpsertReference(ctx, domain.ReferencePrice{
+				TrimID:     trimID,
+				Year:       year,
+				Source:     source,
+				Kind:       "guide",
+				Price:      price,
+				Currency:   currency,
+				ObservedAt: observed,
+			}); err != nil {
+				return fmt.Errorf("upsert %s %s %d: %w", brand, trimName, year, err)
 			}
 		}
+		linked++
 	}
-	return 0, false, nil
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	slog.Info("guide link finished", "dry_run", dryRun, "scanned", scanned, "linked", linked)
+	return nil
+}
+
+func loadCatalog(ctx context.Context, pool *pgxpool.Pool) ([]guide.Trim, error) {
+	rows, err := pool.Query(ctx, `
+		SELECT t.id, b.name, m.name, t.name, te.year
+		FROM trims t
+		JOIN generations g ON g.id = t.generation_id
+		JOIN models m ON m.id = g.model_id
+		JOIN brands b ON b.id = m.brand_id
+		JOIN trim_equipment te ON te.trim_id = t.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	byID := map[int]*guide.Trim{}
+	var order []int
+	for rows.Next() {
+		var id, year int
+		var brand, model, name string
+		if err := rows.Scan(&id, &brand, &model, &name, &year); err != nil {
+			return nil, err
+		}
+		item, ok := byID[id]
+		if !ok {
+			item = &guide.Trim{ID: id, Brand: brand, Model: model, Name: name, Years: map[int]struct{}{}}
+			byID[id] = item
+			order = append(order, id)
+		}
+		item.Years[year] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]guide.Trim, 0, len(order))
+	for _, id := range order {
+		out = append(out, *byID[id])
+	}
+	return out, nil
 }
 
 func runCarsbase(path string, dryRun bool) error {

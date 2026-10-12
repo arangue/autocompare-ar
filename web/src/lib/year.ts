@@ -1,21 +1,7 @@
 import type { TrimDetail } from "./types";
 
-export function isYearInRange(
-  year: number,
-  yearFrom: number | null,
-  yearTo: number | null,
-): boolean {
-  if (yearFrom != null && year < yearFrom) {
-    return false;
-  }
-  if (yearTo != null && year > yearTo) {
-    return false;
-  }
-  return yearFrom != null || yearTo != null;
-}
-
 export function defaultYear(trim: TrimDetail, queryYear?: number): number {
-  if (queryYear != null && isYearInRange(queryYear, trim.year_from, trim.year_to)) {
+  if (queryYear != null && queryYear > 0) {
     return queryYear;
   }
   if (trim.year_from != null && trim.year_to != null) {
