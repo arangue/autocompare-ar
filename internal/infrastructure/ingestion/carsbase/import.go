@@ -20,19 +20,20 @@ type Stats struct {
 	Trims   int
 }
 
-// Load replaces equipment_sheets with the sqlite file and relinks catalog
-// trims. dryRun reports what would be written and leaves Postgres unchanged.
+// Load replaces equipment_sheets with the sqlite file and upserts a catalog
+// trim for every title. dryRun reports what would be written and leaves
+// Postgres unchanged.
 func Load(ctx context.Context, pool *pgxpool.Pool, sqlitePath string, dryRun bool) (Stats, error) {
 	sheets, dropped, err := readSQLite(sqlitePath)
 	if err != nil {
 		return Stats{}, err
 	}
-	trims, err := loadTrims(ctx, pool)
-	if err != nil {
-		return Stats{}, err
+	catalog := BuildCatalog(sheets)
+	links := 0
+	for _, trim := range catalog {
+		links += len(trim.Years)
 	}
-	links := MatchAll(trims, sheets)
-	stats := Stats{Sheets: len(sheets), Dropped: dropped, Links: len(links), Trims: linkedTrims(links)}
+	stats := Stats{Sheets: len(sheets), Dropped: dropped, Links: links, Trims: len(catalog)}
 	if dryRun {
 		return stats, nil
 	}
@@ -49,21 +50,13 @@ func Load(ctx context.Context, pool *pgxpool.Pool, sqlitePath string, dryRun boo
 	if err := insertSheets(ctx, tx, sheets); err != nil {
 		return Stats{}, err
 	}
-	if err := insertLinks(ctx, tx, links); err != nil {
+	if err := insertCatalog(ctx, tx, catalog); err != nil {
 		return Stats{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return Stats{}, err
 	}
 	return stats, nil
-}
-
-func linkedTrims(links []Link) int {
-	seen := map[int]bool{}
-	for _, link := range links {
-		seen[link.TrimID] = true
-	}
-	return len(seen)
 }
 
 func readSQLite(path string) ([]Sheet, int, error) {
@@ -121,36 +114,115 @@ func readSQLite(path string) ([]Sheet, int, error) {
 	return sheets, dropped, rows.Err()
 }
 
-func loadTrims(ctx context.Context, pool *pgxpool.Pool) ([]TrimRef, error) {
-	rows, err := pool.Query(ctx, `
-		SELECT t.id, b.name, m.name, t.name, g.year_from, COALESCE(g.year_to, 0),
-		       COALESCE(t.year_from, 0), COALESCE(t.year_to, 0)
-		FROM trims t
-		JOIN generations g ON g.id = t.generation_id
-		JOIN models m ON m.id = g.model_id
-		JOIN brands b ON b.id = m.brand_id`)
-	if err != nil {
-		return nil, err
+func insertCatalog(ctx context.Context, tx pgx.Tx, trims []CatalogTrim) error {
+	type span struct {
+		from int
+		to   *int
 	}
-	defer rows.Close()
-
-	var trims []TrimRef
-	for rows.Next() {
-		var trim TrimRef
-		if err := rows.Scan(&trim.ID, &trim.Brand, &trim.Model, &trim.Name, &trim.GenFrom, &trim.GenTo, &trim.YearFrom, &trim.YearTo); err != nil {
-			return nil, err
+	spans := map[string]*span{}
+	for _, trim := range trims {
+		key := trim.Brand + "\x00" + trim.Model + "\x00" + trim.Generation
+		s := spans[key]
+		if s == nil {
+			s = &span{from: trim.YearFrom, to: trim.YearTo}
+			spans[key] = s
+			continue
 		}
-		trims = append(trims, trim)
+		if trim.YearFrom < s.from {
+			s.from = trim.YearFrom
+		}
+		if trim.YearTo == nil || s.to == nil {
+			s.to = nil
+			continue
+		}
+		if *trim.YearTo > *s.to {
+			v := *trim.YearTo
+			s.to = &v
+		}
 	}
-	return trims, rows.Err()
+
+	brands := map[string]int{}
+	models := map[string]int{}
+	gens := map[string]int{}
+	for _, trim := range trims {
+		brandID, err := cachedID(brands, trim.Brand, func() (int, error) {
+			return upsertID(ctx, tx, `
+				INSERT INTO brands (name) VALUES ($1)
+				ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+				RETURNING id`, trim.Brand)
+		})
+		if err != nil {
+			return err
+		}
+		modelKey := trim.Brand + "\x00" + trim.Model
+		modelID, err := cachedID(models, modelKey, func() (int, error) {
+			return upsertID(ctx, tx, `
+				INSERT INTO models (brand_id, name) VALUES ($1, $2)
+				ON CONFLICT (brand_id, name) DO UPDATE SET name = EXCLUDED.name
+				RETURNING id`, brandID, trim.Model)
+		})
+		if err != nil {
+			return err
+		}
+		genKey := modelKey + "\x00" + trim.Generation
+		genSpan := spans[genKey]
+		genID, err := cachedID(gens, genKey, func() (int, error) {
+			return upsertID(ctx, tx, `
+				INSERT INTO generations (model_id, name, year_from, year_to) VALUES ($1, $2, $3, $4)
+				ON CONFLICT (model_id, name) DO UPDATE SET
+					year_from = EXCLUDED.year_from,
+					year_to = EXCLUDED.year_to
+				RETURNING id`, modelID, trim.Generation, genSpan.from, genSpan.to)
+		})
+		if err != nil {
+			return err
+		}
+		trimID, err := upsertID(ctx, tx, `
+			INSERT INTO trims (generation_id, name, year_from, year_to) VALUES ($1, $2, $3, $4)
+			ON CONFLICT (generation_id, name) DO UPDATE SET
+				year_from = EXCLUDED.year_from,
+				year_to = EXCLUDED.year_to
+			RETURNING id`, genID, trim.Name, trim.YearFrom, trim.YearTo)
+		if err != nil {
+			return fmt.Errorf("trim %s %s %s: %w", trim.Brand, trim.Model, trim.Name, err)
+		}
+		for year, url := range trim.Years {
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO trim_equipment (trim_id, year, sheet_url) VALUES ($1, $2, $3)`,
+				trimID, year, url,
+			); err != nil {
+				return fmt.Errorf("link %s %d: %w", trim.Name, year, err)
+			}
+		}
+	}
+	return nil
+}
+
+func cachedID(cache map[string]int, key string, load func() (int, error)) (int, error) {
+	if id, ok := cache[key]; ok {
+		return id, nil
+	}
+	id, err := load()
+	if err != nil {
+		return 0, err
+	}
+	cache[key] = id
+	return id, nil
+}
+
+func upsertID(ctx context.Context, tx pgx.Tx, query string, args ...any) (int, error) {
+	var id int
+	err := tx.QueryRow(ctx, query, args...).Scan(&id)
+	return id, err
 }
 
 func insertSheets(ctx context.Context, tx pgx.Tx, sheets []Sheet) error {
 	const q = `INSERT INTO equipment_sheets (
 		url, brand_name, model_name, title, year, year_from, year_to,
 		engine, displacement_cc, horsepower, transmission, fuel, doors, seats,
-		consumption_city, consumption_highway, features
-	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb)`
+		consumption_city, consumption_highway, consumption_mixed,
+		torque_nm, cylinders, top_speed_kmh, traction, features
+	) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22::jsonb)`
 	for _, sheet := range sheets {
 		raw, err := json.Marshal(sheet.Features)
 		if err != nil {
@@ -162,21 +234,10 @@ func insertSheets(ctx context.Context, tx pgx.Tx, sheets []Sheet) error {
 		if _, err := tx.Exec(ctx, q,
 			sheet.URL, sheet.Brand, sheet.Model, sheet.Title, sheet.Year, sheet.YearFrom, sheet.YearTo,
 			sheet.Engine, sheet.DisplacementCC, sheet.Horsepower, sheet.Transmission, sheet.Fuel,
-			sheet.Doors, sheet.Seats, sheet.ConsumptionCity, sheet.ConsumptionHighway, string(raw),
+			sheet.Doors, sheet.Seats, sheet.ConsumptionCity, sheet.ConsumptionHighway, sheet.ConsumptionMixed,
+			sheet.TorqueNm, sheet.Cylinders, sheet.TopSpeedKmh, sheet.Traction, string(raw),
 		); err != nil {
 			return fmt.Errorf("insert %s: %w", sheet.URL, err)
-		}
-	}
-	return nil
-}
-
-func insertLinks(ctx context.Context, tx pgx.Tx, links []Link) error {
-	for _, link := range links {
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO trim_equipment (trim_id, year, sheet_url) VALUES ($1, $2, $3)`,
-			link.TrimID, link.Year, link.URL,
-		); err != nil {
-			return fmt.Errorf("link trim %d year %d: %w", link.TrimID, link.Year, err)
 		}
 	}
 	return nil

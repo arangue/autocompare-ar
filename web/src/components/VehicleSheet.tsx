@@ -73,6 +73,20 @@ function groupFeaturesByCategory(
   return grouped;
 }
 
+function liters(value: number | null): string | null {
+  return value != null ? `${value} l/100 km` : null;
+}
+
+function specItem(label: string, value: string | null) {
+  if (!value) return null;
+  return (
+    <div key={label}>
+      <dt className="text-sm text-zinc-500">{label}</dt>
+      <dd className="text-zinc-900">{value}</dd>
+    </div>
+  );
+}
+
 function sourceLabel(source: string) {
   if (source === "seed") return "Demostración";
   if (source === "file") return "Carga manual";
@@ -255,10 +269,12 @@ export function VehicleSheet() {
           {trim.model_name} {trim.trim_name}
         </h1>
         <p className="mt-2 text-zinc-600">
-          {trim.generation_name}
+          {trim.generation_name !== trim.model_name ? `${trim.generation_name} · ` : ""}
           {trim.year_from != null && trim.year_to != null
-            ? ` · ${trim.year_from}–${trim.year_to}`
-            : ""}
+            ? `${trim.year_from}–${trim.year_to}`
+            : trim.year_from != null
+              ? `${trim.year_from}+`
+              : ""}
         </p>
 
         <div className="mt-4 flex flex-wrap items-end gap-3">
@@ -344,7 +360,7 @@ export function VehicleSheet() {
 
         <p className="text-sm text-zinc-600">
           {deal?.disclaimer ??
-            "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta. Catálogo de demostración."}
+            "Estimación a partir de publicaciones comparables; el precio publicado no es precio de venta."}
         </p>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -407,6 +423,20 @@ export function VehicleSheet() {
                   <dd className="text-zinc-900">{trim.specs.horsepower} CV</dd>
                 </div>
               ) : null}
+              {specItem(
+                "Cilindrada",
+                trim.specs.displacement_cc != null ? `${trim.specs.displacement_cc} cc` : null,
+              )}
+              {specItem("Cilindros", trim.specs.cylinders != null ? String(trim.specs.cylinders) : null)}
+              {specItem("Torque", trim.specs.torque_nm != null ? `${trim.specs.torque_nm} Nm` : null)}
+              {specItem("Tracción", trim.specs.traction || null)}
+              {specItem(
+                "Velocidad máxima",
+                trim.specs.top_speed_kmh != null ? `${trim.specs.top_speed_kmh} km/h` : null,
+              )}
+              {specItem("Consumo ciudad", liters(trim.specs.consumption_city))}
+              {specItem("Consumo ruta", liters(trim.specs.consumption_highway))}
+              {specItem("Consumo mixto", liters(trim.specs.consumption_mixed))}
             </dl>
           ) : (
             <p className="mt-4 text-sm text-zinc-600">

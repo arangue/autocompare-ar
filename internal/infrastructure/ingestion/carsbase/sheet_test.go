@@ -27,7 +27,13 @@ func TestParseDetallesIgnoresDump(t *testing.T) {
 			"Combustible": "Nafta",
 			"Cilindrada (cm³)": "1368",
 			"Consumo en ciudad (l/100 km)": "9.2",
-			"Consumo en ruta (l/100 km)": "6.8"
+			"Consumo en ruta (l/100 km)": "6.8",
+			"Consumo mixto (l/100 km)": "7.5",
+			"Torque (Nm)": "200",
+			"Cilindros": "4",
+			"Tracción": "Delantera",
+			"Velocidad máxima (km/h)": "190",
+			"Generación": "Mk7"
 		},
 		"Carrocería": {"Puertas": "3", "Plazas": "4"},
 		"Seguridad": {"Airbags (total)": "2", "Frenos ABS": "Sí"},
@@ -37,7 +43,7 @@ func TestParseDetallesIgnoresDump(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sheet.Engine != "1.4L Turbo" || sheet.Transmission != "MT 5" || sheet.Fuel != "Nafta" {
+	if sheet.Engine != "1.4L Turbo" || sheet.Transmission != "MT 5" || sheet.Fuel != "Nafta" || sheet.Generation != "Mk7" {
 		t.Fatalf("spec = %+v", sheet)
 	}
 	if sheet.Horsepower == nil || *sheet.Horsepower != 165 || sheet.DisplacementCC == nil || *sheet.DisplacementCC != 1368 {
@@ -45,6 +51,12 @@ func TestParseDetallesIgnoresDump(t *testing.T) {
 	}
 	if sheet.Doors == nil || *sheet.Doors != 3 || sheet.Seats == nil || *sheet.Seats != 4 {
 		t.Fatalf("body = doors %v seats %v", sheet.Doors, sheet.Seats)
+	}
+	if sheet.TorqueNm == nil || *sheet.TorqueNm != 200 || sheet.Cylinders == nil || *sheet.Cylinders != 4 || sheet.TopSpeedKmh == nil || *sheet.TopSpeedKmh != 190 || sheet.Traction != "Delantera" {
+		t.Fatalf("mechanics = %+v", sheet)
+	}
+	if sheet.ConsumptionMixed == nil || *sheet.ConsumptionMixed != 7.5 {
+		t.Fatalf("mixed = %v", sheet.ConsumptionMixed)
 	}
 	if len(sheet.Features) != 3 {
 		t.Fatalf("features = %+v", sheet.Features)

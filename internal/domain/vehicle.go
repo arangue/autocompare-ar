@@ -44,6 +44,11 @@ type VehicleSpec struct {
 	Seats              *int     `json:"seats"`
 	ConsumptionCity    *float64 `json:"consumption_city"`
 	ConsumptionHighway *float64 `json:"consumption_highway"`
+	ConsumptionMixed   *float64 `json:"consumption_mixed"`
+	TorqueNm           *int     `json:"torque_nm"`
+	Cylinders          *int     `json:"cylinders"`
+	TopSpeedKmh        *int     `json:"top_speed_kmh"`
+	Traction           string   `json:"traction"`
 }
 
 type VehicleFeature struct {

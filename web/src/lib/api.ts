@@ -50,7 +50,7 @@ async function fetchJSON<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function searchTrims(q: string, limit = 20): Promise<TrimSearchResult[]> {
+export function searchTrims(q: string, limit = 100): Promise<TrimSearchResult[]> {
   const params = new URLSearchParams({ q, limit: String(limit) });
   return fetchJSON<TrimSearchResult[]>(`/api/v1/search/trims?${params}`);
 }

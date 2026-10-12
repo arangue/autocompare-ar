@@ -72,7 +72,6 @@ export function HomeSearch() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar versión (ej. Corolla XEi)"
           className="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 shadow-sm outline-none ring-emerald-600/30 placeholder:text-zinc-400 focus:border-emerald-600 focus:ring-2"
-          autoComplete="off"
         />
         <button
           type="submit"
@@ -107,7 +106,10 @@ export function HomeSearch() {
                       {result.brand_name} {result.model_name}
                     </p>
                     <p className="text-sm text-zinc-600">
-                      {result.generation_name} · {result.trim_name}
+                      {result.generation_name !== result.model_name
+                        ? `${result.generation_name} · `
+                        : ""}
+                      {result.trim_name}
                       {yearLabel(result) ? ` · ${yearLabel(result)}` : ""}
                     </p>
                   </Link>

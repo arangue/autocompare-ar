@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/arangue/autocompare-ar/internal/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,6 +50,20 @@ func (r *PricingRepository) UpsertReference(ctx context.Context, ref domain.Refe
 			observed_at = EXCLUDED.observed_at
 		RETURNING (xmax = 0)`,
 		ref.TrimID, ref.Year, ref.Source, ref.Kind, ref.Price, ref.Currency, ref.ObservedAt,
+	).Scan(&inserted)
+	return inserted, err
+}
+
+func (r *PricingRepository) UpsertGuidePrice(ctx context.Context, source, brand, model, trimName, currency string, year int, price int64, observedAt time.Time) (inserted bool, err error) {
+	err = r.pool.QueryRow(ctx, `
+		INSERT INTO guide_prices (source, brand, model, trim_name, year, price, currency, observed_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (source, brand, model, trim_name, year) DO UPDATE SET
+			price = EXCLUDED.price,
+			currency = EXCLUDED.currency,
+			observed_at = EXCLUDED.observed_at
+		RETURNING (xmax = 0)`,
+		source, brand, model, trimName, year, price, currency, observedAt,
 	).Scan(&inserted)
 	return inserted, err
 }

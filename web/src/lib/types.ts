@@ -18,6 +18,11 @@ export type VehicleSpec = {
   seats: number | null;
   consumption_city: number | null;
   consumption_highway: number | null;
+  consumption_mixed: number | null;
+  torque_nm: number | null;
+  cylinders: number | null;
+  top_speed_kmh: number | null;
+  traction: string;
 };
 
 export type VehicleFeature = {

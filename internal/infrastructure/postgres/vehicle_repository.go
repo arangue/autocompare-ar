@@ -76,9 +76,7 @@ func (r *VehicleRepository) SearchTrims(ctx context.Context, query string, limit
 		JOIN generations g ON g.id = t.generation_id
 		JOIN models m      ON m.id = g.model_id
 		JOIN brands b      ON b.id = m.brand_id
-		WHERE b.name ILIKE '%' || $1 || '%'
-		   OR m.name ILIKE '%' || $1 || '%'
-		   OR t.name ILIKE '%' || $1 || '%'
+		WHERE (b.name || ' ' || m.name || ' ' || g.name || ' ' || t.name) ILIKE '%' || $1 || '%'
 		ORDER BY b.name, m.name, t.name
 		LIMIT $2`, query, limit)
 	if err != nil {
@@ -187,7 +185,8 @@ func (r *VehicleRepository) loadTrimFeatures(ctx context.Context, trimID int, d 
 
 func (r *VehicleRepository) applyEquipment(ctx context.Context, d *domain.TrimDetail, year int) error {
 	q := `SELECT engine, displacement_cc, horsepower, transmission, fuel,
-	             doors, seats, consumption_city, consumption_highway, features
+	             doors, seats, consumption_city, consumption_highway, consumption_mixed,
+	             torque_nm, cylinders, top_speed_kmh, traction, features
 	      FROM trim_equipment te
 	      JOIN equipment_sheets es ON es.url = te.sheet_url
 	      WHERE te.trim_id = $1`
@@ -199,19 +198,24 @@ func (r *VehicleRepository) applyEquipment(ctx context.Context, d *domain.TrimDe
 	}
 
 	var (
-		engine, transmission, fuel             string
+		engine, transmission, fuel, traction   string
 		displacement, horsepower, doors, seats *int
-		city, highway                          *float64
+		torque, cylinders, topSpeed            *int
+		city, highway, mixed                   *float64
 		raw                                    []byte
 	)
-	err := row.Scan(&engine, &displacement, &horsepower, &transmission, &fuel, &doors, &seats, &city, &highway, &raw)
+	err := row.Scan(
+		&engine, &displacement, &horsepower, &transmission, &fuel,
+		&doors, &seats, &city, &highway, &mixed,
+		&torque, &cylinders, &topSpeed, &traction, &raw,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
 		return err
 	}
-	if engine != "" || transmission != "" || fuel != "" || horsepower != nil {
+	if engine != "" || transmission != "" || fuel != "" || horsepower != nil || displacement != nil || torque != nil {
 		d.Specs = &domain.VehicleSpec{
 			Engine:             engine,
 			DisplacementCC:     displacement,
@@ -222,6 +226,11 @@ func (r *VehicleRepository) applyEquipment(ctx context.Context, d *domain.TrimDe
 			Seats:              seats,
 			ConsumptionCity:    city,
 			ConsumptionHighway: highway,
+			ConsumptionMixed:   mixed,
+			TorqueNm:           torque,
+			Cylinders:          cylinders,
+			TopSpeedKmh:        topSpeed,
+			Traction:           traction,
 		}
 	}
 	var features []domain.VehicleFeature

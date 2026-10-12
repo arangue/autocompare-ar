@@ -22,6 +22,7 @@ type Sheet struct {
 	Year               int
 	YearFrom           int
 	YearTo             *int
+	Generation         string
 	Engine             string
 	DisplacementCC     *int
 	Horsepower         *int
@@ -31,6 +32,11 @@ type Sheet struct {
 	Seats              *int
 	ConsumptionCity    *float64
 	ConsumptionHighway *float64
+	ConsumptionMixed   *float64
+	TorqueNm           *int
+	Cylinders          *int
+	TopSpeedKmh        *int
+	Traction           string
 	Features           []domain.VehicleFeature
 
 	gearbox string
@@ -89,9 +95,15 @@ func ParseDetalles(raw string) (Sheet, error) {
 		return Sheet{}, err
 	}
 	for _, section := range sections {
+		if sheet.Generation == "" && (section.key == "Generación" || section.key == "Generacion") {
+			sheet.Generation = scalar(section.val)
+		}
 		fields, err := orderedObject(section.val)
 		if err != nil {
 			continue
+		}
+		if sheet.Generation == "" {
+			sheet.Generation = generationFrom(fields)
 		}
 		switch section.key {
 		case "Mecánica", "Carrocería":
@@ -274,6 +286,15 @@ func scalar(raw json.RawMessage) string {
 	return strings.TrimSpace(string(raw))
 }
 
+func generationFrom(fields []field) string {
+	for _, field := range fields {
+		if field.key == "Generación" || field.key == "Generacion" {
+			return scalar(field.val)
+		}
+	}
+	return ""
+}
+
 func applySpec(sheet *Sheet, fields []field) {
 	for _, field := range fields {
 		value := scalar(field.val)
@@ -305,6 +326,24 @@ func applySpec(sheet *Sheet, fields []field) {
 			if n, ok := parseFloat(value); ok {
 				sheet.ConsumptionHighway = &n
 			}
+		case "Consumo mixto (l/100 km)":
+			if n, ok := parseFloat(value); ok {
+				sheet.ConsumptionMixed = &n
+			}
+		case "Torque (Nm)":
+			if n, ok := parseIntish(value); ok {
+				sheet.TorqueNm = &n
+			}
+		case "Cilindros":
+			if n, ok := parseIntish(value); ok {
+				sheet.Cylinders = &n
+			}
+		case "Velocidad máxima (km/h)", "Velocidad maxima (km/h)":
+			if n, ok := parseIntish(value); ok {
+				sheet.TopSpeedKmh = &n
+			}
+		case "Tracción", "Traccion":
+			sheet.Traction = value
 		case "Puertas":
 			if n, ok := parseIntish(value); ok {
 				sheet.Doors = &n

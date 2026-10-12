@@ -116,8 +116,8 @@ func (h *Handler) SearchTrims(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = n
 	}
-	if limit > 50 {
-		limit = 50
+	if limit > 100 {
+		limit = 100
 	}
 
 	trims, err := h.searchTrims.Execute(r.Context(), query, limit)

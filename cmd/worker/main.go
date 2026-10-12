@@ -206,8 +206,13 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
+	if !dryRun {
+		if err := applyMigrations(databaseURL()); err != nil {
+			return err
+		}
+	}
 	pool, err := openPool(ctx)
 	if err != nil {
 		return err
@@ -217,28 +222,27 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 	aliases := postgres.NewAliasRepository(pool)
 	prices := postgres.NewPricingRepository(pool)
 	cache := map[string]resolveHit{}
-	matched, skipped, inserted, updated := 0, 0, 0, 0
+	matched, stored, linked := 0, 0, 0
 	for _, row := range rows {
 		trimID, ok, err := resolveGuide(ctx, aliases, cache, row, aliasSource)
 		if err != nil {
 			return err
 		}
-		if !ok {
-			skipped++
-			continue
+		if ok {
+			matched++
 		}
-		matched++
 		for _, cell := range row.Cells {
 			if dryRun {
-				slog.Info("dry-run reference",
-					"trim_id", trimID,
-					"year", cell.Year,
-					"price", cell.Price,
-					"currency", row.Currency,
-				)
 				continue
 			}
-			wasInsert, err := prices.UpsertReference(ctx, domain.ReferencePrice{
+			if _, err := prices.UpsertGuidePrice(ctx, refSource, row.Brand, row.Model, row.Trim, row.Currency, cell.Year, cell.Price, observed); err != nil {
+				return fmt.Errorf("guide price %s %s %d: %w", row.Brand, row.Trim, cell.Year, err)
+			}
+			stored++
+			if !ok {
+				continue
+			}
+			if _, err := prices.UpsertReference(ctx, domain.ReferencePrice{
 				TrimID:     trimID,
 				Year:       cell.Year,
 				Source:     refSource,
@@ -246,15 +250,10 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 				Price:      cell.Price,
 				Currency:   row.Currency,
 				ObservedAt: observed,
-			})
-			if err != nil {
+			}); err != nil {
 				return fmt.Errorf("upsert %s %s %d: %w", row.Brand, row.Trim, cell.Year, err)
 			}
-			if wasInsert {
-				inserted++
-			} else {
-				updated++
-			}
+			linked++
 		}
 	}
 	slog.Info("guide ingest finished",
@@ -262,9 +261,8 @@ func runGuide(path, observedRaw string, dryRun bool, kind string) error {
 		"dry_run", dryRun,
 		"rows", len(rows),
 		"matched", matched,
-		"skipped", skipped,
-		"inserted", inserted,
-		"updated", updated,
+		"stored", stored,
+		"linked", linked,
 	)
 	return nil
 }
@@ -299,7 +297,7 @@ func resolveGuide(ctx context.Context, aliases domain.AliasRepository, cache map
 }
 
 func runCarsbase(path string, dryRun bool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 	if !dryRun {
 		if err := applyMigrations(databaseURL()); err != nil {
