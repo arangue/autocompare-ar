@@ -164,9 +164,9 @@ Vehicle identity for one trim. `year` is optional and echoed as `requested_year`
 {"code":"INTERNAL_ERROR","message":"failed to get trim"}
 ```
 
-### `GET /api/v1/trims/{trim_id}/listings?year=&limit=`
+### `GET /api/v1/trims/{trim_id}/listings?year=&limit=&currency=`
 
-Active listings for a trim and year, ordered by price ascending. Default `limit` is 50, max 100.
+Active listings for a trim and year, ordered by price ascending. Default `limit` is 50, max 100. `currency` is optional `ARS` or `USD`; omit it to include both.
 
 **200** — array of listings (empty if none)
 
@@ -206,9 +206,9 @@ Active listings for a trim and year, ordered by price ascending. Default `limit`
 {"code":"INTERNAL_ERROR","message":"failed to list listings"}
 ```
 
-### `GET /api/v1/trims/{trim_id}/market?year=`
+### `GET /api/v1/trims/{trim_id}/market?year=&currency=`
 
-Market price distribution from active listings for a trim and year.
+Market price distribution from active listings for a trim and year. `currency` is optional `ARS` or `USD`; omit it to use the majority currency. To show both, the UI requests ARS and USD separately so medians are never mixed.
 
 **200** — with listings
 
@@ -297,9 +297,9 @@ Guide and fiscal reference prices (CCA, ACARA, DNRPA) for a trim and year. DNRPA
 {"code":"INTERNAL_ERROR","message":"failed to list references"}
 ```
 
-### `GET /api/v1/trims/{trim_id}/deal?year=&price=`
+### `GET /api/v1/trims/{trim_id}/deal?year=&price=&currency=`
 
-Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”. `ok` requiere al menos 5 publicaciones activas; si no, `insufficient_data`. `MARKET_EXCLUDE_SEED` defaults to false locally, so demo `source=seed` rows stay in the median and the list. Set it to `true` on the API only when that trim and year already has another source (see `docs/runbooks/railway.md`). Deal uses the same repository filter as the listings list.
+Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”. `currency` is required (`ARS` or `USD`) and the median uses only listings in that currency. `ok` requiere al menos 5 publicaciones activas en esa moneda; si no, `insufficient_data`. `MARKET_EXCLUDE_SEED` defaults to false locally, so demo `source=seed` rows stay in the median and the list. Set it to `true` on the API only when that trim and year already has another source (see `docs/runbooks/railway.md`).
 
 **200** — enough listings
 
@@ -347,10 +347,14 @@ Compare an asking price to the market median and percentile band for a trim and 
 }
 ```
 
-**400** — `year` or `price` missing or invalid
+**400** — `year`, `price`, or `currency` missing or invalid
 
 ```json
 {"code":"INVALID_PRICE","message":"price is required"}
+```
+
+```json
+{"code":"INVALID_CURRENCY","message":"currency must be ARS or USD"}
 ```
 
 **500**
@@ -359,9 +363,9 @@ Compare an asking price to the market median and percentile band for a trim and 
 {"code":"INTERNAL_ERROR","message":"failed to assess deal"}
 ```
 
-### `GET /api/v1/compare?trim_ids=&year=`
+### `GET /api/v1/compare?trim_ids=&year=&currency=`
 
-Side-by-side compare of 2–3 trims for one year: identity, key specs, market median, and a feature matrix.
+Side-by-side compare of 2–3 trims for one year: identity, key specs, market median, and a feature matrix. `currency` is optional `ARS` or `USD`.
 
 **200**
 
@@ -508,7 +512,7 @@ curl 'http://localhost:8080/api/v1/trims/1?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/listings?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
-curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000'
+curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000&currency=ARS'
 curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&year=2019'
 ```
 
@@ -522,13 +526,16 @@ go run ./cmd/worker path/to/file.csv             # or set INGEST_FILE
 go run ./cmd/worker -dry-run testdata/listings.titles.json   # first prod run: resolve titles, no writes
 go run ./cmd/worker -expire-days 14 testdata/listings.json   # upsert first, then expire
 INGEST_FILE= go run ./cmd/worker -expire-days 14             # expire only (no file)
+python3 scripts/scrape_ml.py ford                # up to 42 pages, writes mercadolibre_ford_cars.csv
+go run ./cmd/worker -dry-run -source ml -brand Ford mercadolibre_ford_cars.csv
+go run ./cmd/worker -source ml -brand Ford mercadolibre_ford_cars.csv
 ```
 
 First production run is always `go run ./cmd/worker -dry-run testdata/listings.titles.json`. That file has `raw_title` and no `trim_id`, so it exercises alias Resolve. `-dry-run` logs matches and does not upsert. Needs Postgres (`make db-up`); if `DATABASE_URL` is unset, the worker uses `.env` or the same local default as `make`.
 
 `-expire-days` default 0 is a no-op. Expire runs **after** upsert: rows in the file get `last_seen_at=NOW()` and are not expired. Unset `INGEST_FILE` (the Makefile `.env` sets it) for expire-only. Rows are deactivated, not deleted.
 
-It does not scrape CCA, ACARA, Mercado Libre, or classifieds HTML — see [DESIGN.md](DESIGN.md) §9.
+Mercado Libre asking prices come from `scripts/scrape_ml.py`. `-source ml` keeps a card when one carsbase trim fits that title and year. If the title is ambiguous, the worker opens the listing page for doors and transmission and tries again. `-brand` is the catalog brand name (`Ford`, not the URL slug). Other cards are logged and skipped. CCA and ACARA guide PDFs use `-source acara` and `-source cca`.
 
 JSON shape:
 

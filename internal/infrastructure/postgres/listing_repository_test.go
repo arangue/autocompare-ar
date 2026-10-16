@@ -85,7 +85,7 @@ func TestUpsert_activeFalsePersists(t *testing.T) {
 		t.Fatal("active:false was not persisted")
 	}
 
-	got, err := repo.ListByTrimYear(ctx, listing.TrimID, listing.Year, 100)
+	got, err := repo.ListByTrimYear(ctx, listing.TrimID, listing.Year, 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestExpireStale_deactivatesOld(t *testing.T) {
 		t.Fatal("stale listing still active")
 	}
 
-	got, err := repo.ListByTrimYear(ctx, listing.TrimID, listing.Year, 100)
+	got, err := repo.ListByTrimYear(ctx, listing.TrimID, listing.Year, 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,11 +193,11 @@ func TestExcludeSeed_sameRuleForListAndMarket(t *testing.T) {
 		}
 	}
 
-	offMarket, err := off.MarketSummary(ctx, trimID, 2099)
+	offMarket, err := off.MarketSummary(ctx, trimID, 2099, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	offList, err := off.ListByTrimYear(ctx, trimID, 2099, 100)
+	offList, err := off.ListByTrimYear(ctx, trimID, 2099, 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,15 +205,81 @@ func TestExcludeSeed_sameRuleForListAndMarket(t *testing.T) {
 		t.Fatalf("flag off market=%d list=%d", offMarket.Count, len(offList))
 	}
 
-	onMarket, err := on.MarketSummary(ctx, trimID, 2099)
+	onMarket, err := on.MarketSummary(ctx, trimID, 2099, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	onList, err := on.ListByTrimYear(ctx, trimID, 2099, 100)
+	onList, err := on.ListByTrimYear(ctx, trimID, 2099, 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if onMarket.Count != 1 || len(onList) != 1 || onList[0].Source != "file" {
 		t.Fatalf("flag on market=%d list=%v", onMarket.Count, onList)
+	}
+}
+
+func TestMarketSummary_majorityCurrency(t *testing.T) {
+	pool := catalogPool(t)
+	defer pool.Close()
+	repo := NewListingRepository(pool, false)
+	ctx := context.Background()
+	trimID := fixtureTrim(t, pool)
+
+	rows := []domain.Listing{
+		{Source: "file", ExternalID: "cur-usd-1", TrimID: trimID, Year: 2088, Price: 20_000, Currency: "USD"},
+		{Source: "file", ExternalID: "cur-usd-2", TrimID: trimID, Year: 2088, Price: 22_000, Currency: "USD"},
+		{Source: "file", ExternalID: "cur-ars-1", TrimID: trimID, Year: 2088, Price: 40_000_000, Currency: "ARS"},
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(),
+			`DELETE FROM vehicle_listings WHERE external_id LIKE 'cur-%'`)
+	})
+	for _, listing := range rows {
+		if _, err := repo.Upsert(ctx, listing); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	summary, err := repo.MarketSummary(ctx, trimID, 2088, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Count != 2 || summary.Currency != "USD" {
+		t.Fatalf("summary = %+v", summary)
+	}
+	if summary.Median == nil || *summary.Median != 21_000 {
+		t.Fatalf("median = %v", summary.Median)
+	}
+
+	all, err := repo.ListByTrimYear(ctx, trimID, 2088, 10, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 3 {
+		t.Fatalf("all list = %d", len(all))
+	}
+
+	list, err := repo.ListByTrimYear(ctx, trimID, 2088, 10, "USD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("usd list = %d", len(list))
+	}
+	for _, listing := range list {
+		if listing.Currency != "USD" {
+			t.Fatalf("mixed list currency = %s", listing.Currency)
+		}
+	}
+
+	ars, err := repo.MarketSummary(ctx, trimID, 2088, "ARS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ars.Count != 1 || ars.Currency != "ARS" {
+		t.Fatalf("ars summary = %+v", ars)
+	}
+	if ars.Median == nil || *ars.Median != 40_000_000 {
+		t.Fatalf("ars median = %v", ars.Median)
 	}
 }

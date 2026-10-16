@@ -7,3 +7,5 @@
 /web/out/
 .cursor/
 .archive/
+mercadolibre_*_cars.csv
+scripts/__pycache__/

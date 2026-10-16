@@ -32,13 +32,25 @@ func (r *ListingRepository) activeWhere() string {
 	return where
 }
 
-func (r *ListingRepository) ListByTrimYear(ctx context.Context, trimID, year, limit int) ([]domain.Listing, error) {
-	rows, err := r.pool.Query(ctx, `
+func (r *ListingRepository) ListByTrimYear(ctx context.Context, trimID, year, limit int, currency string) ([]domain.Listing, error) {
+	query := `
 		SELECT id, source, external_id, trim_id, year, km, price, currency, location, url, last_seen_at
 		FROM vehicle_listings
-		WHERE `+r.activeWhere()+`
+		WHERE ` + r.activeWhere()
+	args := []any{trimID, year}
+	if currency != "" {
+		query += `
+		  AND currency = $3
 		ORDER BY price ASC
-		LIMIT $3`, trimID, year, limit)
+		LIMIT $4`
+		args = append(args, currency, limit)
+	} else {
+		query += `
+		ORDER BY price ASC
+		LIMIT $3`
+		args = append(args, limit)
+	}
+	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +70,17 @@ func (r *ListingRepository) ListByTrimYear(ctx context.Context, trimID, year, li
 	return listings, rows.Err()
 }
 
-func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int) (domain.MarketSummary, error) {
+func (r *ListingRepository) currencyPred() string {
+	return `currency = COALESCE(NULLIF($3, ''), (
+		SELECT currency FROM vehicle_listings
+		WHERE ` + r.activeWhere() + `
+		GROUP BY currency
+		ORDER BY COUNT(*) DESC, CASE WHEN currency = 'ARS' THEN 0 ELSE 1 END, currency
+		LIMIT 1
+	))`
+}
+
+func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int, currency string) (domain.MarketSummary, error) {
 	var summary domain.MarketSummary
 	err := r.pool.QueryRow(ctx, `
 		SELECT
@@ -67,18 +89,24 @@ func (r *ListingRepository) MarketSummary(ctx context.Context, trimID, year int)
 			MAX(price),
 			(percentile_cont(0.25) WITHIN GROUP (ORDER BY price))::bigint,
 			(percentile_cont(0.5) WITHIN GROUP (ORDER BY price))::bigint,
-			(percentile_cont(0.75) WITHIN GROUP (ORDER BY price))::bigint
+			(percentile_cont(0.75) WITHIN GROUP (ORDER BY price))::bigint,
+			COALESCE(MIN(currency), 'ARS')
 		FROM vehicle_listings
-		WHERE `+r.activeWhere(), trimID, year).Scan(
+		WHERE `+r.activeWhere()+`
+		  AND `+r.currencyPred(), trimID, year, currency).Scan(
 		&summary.Count,
 		&summary.Minimum,
 		&summary.Maximum,
 		&summary.P25,
 		&summary.Median,
 		&summary.P75,
+		&summary.Currency,
 	)
 	if err != nil {
 		return domain.MarketSummary{}, err
+	}
+	if summary.Currency == "" {
+		summary.Currency = "ARS"
 	}
 	return summary, nil
 }

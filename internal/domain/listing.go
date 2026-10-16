@@ -19,12 +19,13 @@ type Listing struct {
 }
 
 type MarketSummary struct {
-	Count   int
-	Median  *int64
-	Minimum *int64
-	Maximum *int64
-	P25     *int64
-	P75     *int64
+	Count    int
+	Median   *int64
+	Minimum  *int64
+	Maximum  *int64
+	P25      *int64
+	P75      *int64
+	Currency string
 }
 
 type TrimMarketSummary struct {

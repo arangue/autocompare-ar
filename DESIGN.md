@@ -444,10 +444,10 @@ Indexes (when listings exist):
 | GET | `/api/v1/brands/{brandID}/models` | List models |
 | GET | `/api/v1/search/trims?q=` | Search trims |
 | GET | `/api/v1/trims/{trimID}?year=` | Vehicle detail |
-| GET | `/api/v1/trims/{trimID}/listings?year=` | Active listings |
-| GET | `/api/v1/trims/{trimID}/market?year=` | Market summary |
+| GET | `/api/v1/trims/{trimID}/listings?year=&currency=` | Active listings |
+| GET | `/api/v1/trims/{trimID}/market?year=&currency=` | Market summary |
 | GET | `/api/v1/trims/{trimID}/references?year=` | Guide prices |
-| GET | `/api/v1/trims/{trimID}/deal?year=&price=` | Deal assessment |
+| GET | `/api/v1/trims/{trimID}/deal?year=&price=&currency=` | Deal assessment |
 
 ### Implemented today
 

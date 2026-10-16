@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { ApiError, getCompare } from "@/lib/api";
-import { formatARSCompact } from "@/lib/format";
+import { formatMoneyCompact } from "@/lib/format";
 import type { CompareTrim } from "@/lib/types";
 
 export const metadata = { title: "Comparar | AutoCompare" };
@@ -18,6 +18,14 @@ function parseTrimIds(raw: string): number[] {
     .split(",")
     .map((part) => Number(part.trim()))
     .filter((id) => Number.isFinite(id) && id > 0);
+}
+
+function parseCurrencyView(raw: string): "ARS" | "USD" | "both" {
+  const value = raw.toUpperCase();
+  if (value === "ARS" || value === "USD") {
+    return value;
+  }
+  return "both";
 }
 
 function specCell(trim: CompareTrim, field: "engine" | "transmission" | "horsepower"): string {
@@ -38,6 +46,7 @@ export default async function ComparePage({
   const params = await searchParams;
   const trimIdsRaw = queryValue(params.trim_ids);
   const yearRaw = queryValue(params.year);
+  const currencyView = parseCurrencyView(queryValue(params.currency));
   const trimIds = parseTrimIds(trimIdsRaw);
   const year = Number(yearRaw);
 
@@ -75,8 +84,20 @@ export default async function ComparePage({
   }
 
   let data;
+  let usdByTrim: Record<number, CompareTrim["market"]> = {};
   try {
-    data = await getCompare(trimIds, year);
+    if (currencyView === "both") {
+      const [ars, usd] = await Promise.all([
+        getCompare(trimIds, year, "ARS"),
+        getCompare(trimIds, year, "USD"),
+      ]);
+      data = ars;
+      for (const trim of usd.trims) {
+        usdByTrim[trim.trim_id] = trim.market;
+      }
+    } else {
+      data = await getCompare(trimIds, year, currencyView);
+    }
   } catch (err) {
     const message =
       err instanceof ApiError
@@ -110,6 +131,28 @@ export default async function ComparePage({
         Comparar · {data.year}
       </h1>
 
+      <div className="mt-4 flex gap-2">
+        {(
+          [
+            ["both", "Ambos"],
+            ["ARS", "ARS"],
+            ["USD", "USD"],
+          ] as const
+        ).map(([value, label]) => (
+          <Link
+            key={value}
+            href={`/compare?trim_ids=${trimIds.join(",")}&year=${year}&currency=${value}`}
+            className={
+              currencyView === value
+                ? "rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white"
+                : "rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-700"
+            }
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+
       <div className="mt-8 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead>
@@ -118,7 +161,7 @@ export default async function ComparePage({
               {data.trims.map((trim) => (
                 <th key={trim.trim_id} className="px-4 py-3 align-top">
                   <Link
-                    href={`/trims/${trim.trim_id}?year=${data.year}`}
+                    href={`/trims/${trim.trim_id}?year=${data.year}&currency=${currencyView}`}
                     className="font-semibold text-zinc-900 hover:underline"
                   >
                     {trim.brand_name} {trim.model_name}
@@ -143,10 +186,35 @@ export default async function ComparePage({
               <th className="px-4 py-3 font-medium text-zinc-500">Mediana</th>
               {data.trims.map((trim) => (
                 <td key={trim.trim_id} className="px-4 py-3 font-medium text-zinc-900">
-                  {trim.market.median != null ? formatARSCompact(trim.market.median) : "—"}
-                  <span className="ml-1 font-normal text-zinc-500">
-                    ({trim.market.count})
-                  </span>
+                  {currencyView === "both" ? (
+                    <span className="flex flex-col gap-1">
+                      <span>
+                        {trim.market.median != null
+                          ? formatMoneyCompact(trim.market.median, "ARS")
+                          : "—"}
+                        <span className="ml-1 font-normal text-zinc-500">
+                          ARS ({trim.market.count})
+                        </span>
+                      </span>
+                      <span>
+                        {usdByTrim[trim.trim_id]?.median != null
+                          ? formatMoneyCompact(usdByTrim[trim.trim_id]!.median!, "USD")
+                          : "—"}
+                        <span className="ml-1 font-normal text-zinc-500">
+                          USD ({usdByTrim[trim.trim_id]?.count ?? 0})
+                        </span>
+                      </span>
+                    </span>
+                  ) : (
+                    <>
+                      {trim.market.median != null
+                        ? formatMoneyCompact(trim.market.median, trim.market.currency)
+                        : "—"}
+                      <span className="ml-1 font-normal text-zinc-500">
+                        ({trim.market.count})
+                      </span>
+                    </>
+                  )}
                 </td>
               ))}
             </tr>

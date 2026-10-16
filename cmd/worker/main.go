@@ -18,6 +18,7 @@ import (
 	"github.com/arangue/autocompare-ar/internal/domain"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/carsbase"
+	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/mercadolibre"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/normalize"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/acara"
 	"github.com/arangue/autocompare-ar/internal/infrastructure/ingestion/pdf/cca"
@@ -32,7 +33,8 @@ func main() {
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
 	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
-	source := flag.String("source", "", "acara, cca, carsbase, or link")
+	source := flag.String("source", "", "acara, cca, carsbase, ml, or link")
+	brand := flag.String("brand", "", "carsbase brand name for -source ml")
 	observed := flag.String("observed", "", "guide date YYYY-MM-DD (default today)")
 	flag.Parse()
 
@@ -43,6 +45,13 @@ func main() {
 	if *source == "link" {
 		if err := runLink(*dryRun); err != nil {
 			slog.Error("guide link failed", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *source == "ml" {
+		if err := runML(flag.Arg(0), *brand, *dryRun); err != nil {
+			slog.Error("ml ingest failed", "error", err)
 			os.Exit(1)
 		}
 		return
@@ -374,6 +383,101 @@ func loadCatalog(ctx context.Context, pool *pgxpool.Pool) ([]guide.Trim, error) 
 		out = append(out, *byID[id])
 	}
 	return out, nil
+}
+
+func runML(path, brand string, dryRun bool) error {
+	if strings.TrimSpace(brand) == "" {
+		return fmt.Errorf("ml ingest: -brand is required")
+	}
+	if path == "" {
+		return fmt.Errorf("ml ingest: provide a csv path")
+	}
+
+	listings, skipped, err := mercadolibre.ParseSearchFile(path)
+	if err != nil {
+		return err
+	}
+	rows := len(listings) + skipped
+
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+	defer cancel()
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	catalog, err := loadCatalog(ctx, pool)
+	if err != nil {
+		return err
+	}
+	var listingRepo *postgres.ListingRepository
+	if !dryRun {
+		listingRepo = postgres.NewListingRepository(pool, false)
+	}
+	ml := mercadolibre.New("", "")
+
+	matched, fromSpecs, inserted, updated := 0, 0, 0, 0
+	for _, listing := range listings {
+		trimID, ok := guide.MatchTitle(brand, listing.RawTitle, listing.Year, catalog)
+		if !ok && listing.URL != nil {
+			specs, err := ml.FetchSpecs(ctx, *listing.URL)
+			if err != nil {
+				slog.Warn("listing specs failed", "external_id", listing.ExternalID, "error", err)
+			} else if tok := specs.Tokens(); tok != "" {
+				trimID, ok = guide.MatchTitle(brand, listing.RawTitle+" "+tok, listing.Year, catalog)
+				if ok {
+					fromSpecs++
+				}
+			}
+		}
+		if !ok {
+			slog.Warn("skipped listing", "raw_title", listing.RawTitle, "year", listing.Year)
+			skipped++
+			continue
+		}
+		listing.TrimID = trimID
+		if dryRun {
+			slog.Info("dry-run match",
+				"source", listing.Source,
+				"external_id", listing.ExternalID,
+				"trim_id", listing.TrimID,
+				"year", listing.Year,
+				"price", listing.Price,
+			)
+			matched++
+			continue
+		}
+		wasInsert, err := listingRepo.Upsert(ctx, listing)
+		if err != nil {
+			if errors.Is(err, postgres.ErrUnknownTrim) {
+				slog.Warn("skipped listing", "source", listing.Source, "external_id", listing.ExternalID, "error", err)
+				skipped++
+				if fromSpecs > 0 {
+					fromSpecs--
+				}
+				continue
+			}
+			return fmt.Errorf("upsert %s: %w", listing.ExternalID, err)
+		}
+		matched++
+		if wasInsert {
+			inserted++
+		} else {
+			updated++
+		}
+	}
+
+	slog.Info("ml ingest finished",
+		"dry_run", dryRun,
+		"rows", rows,
+		"matched", matched,
+		"matched_from_specs", fromSpecs,
+		"skipped", skipped,
+		"inserted", inserted,
+		"updated", updated,
+	)
+	return nil
 }
 
 func runCarsbase(path string, dryRun bool) error {

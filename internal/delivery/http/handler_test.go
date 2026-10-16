@@ -60,13 +60,13 @@ type stubListListings struct {
 	listings []domain.Listing
 }
 
-func (s stubListListings) Execute(context.Context, int, int, int) ([]domain.Listing, error) {
+func (s stubListListings) Execute(context.Context, int, int, int, string) ([]domain.Listing, error) {
 	return s.listings, nil
 }
 
 type stubGetMarketSummary struct{}
 
-func (stubGetMarketSummary) Execute(context.Context, int, int) (domain.TrimMarketSummary, error) {
+func (stubGetMarketSummary) Execute(context.Context, int, int, string) (domain.TrimMarketSummary, error) {
 	return domain.TrimMarketSummary{Currency: "ARS"}, nil
 }
 
@@ -78,7 +78,7 @@ func (stubListReferences) Execute(context.Context, int, int) ([]domain.Reference
 
 type stubAssessDeal struct{}
 
-func (stubAssessDeal) Execute(context.Context, int, int, int64) (domain.DealAssessment, error) {
+func (stubAssessDeal) Execute(context.Context, int, int, int64, string) (domain.DealAssessment, error) {
 	return domain.DealAssessment{Currency: "ARS", Status: domain.DealStatusInsufficientData, Band: domain.DealBandInsufficientData}, nil
 }
 
@@ -87,7 +87,7 @@ type stubCompareTrims struct {
 	err    error
 }
 
-func (s stubCompareTrims) Execute(context.Context, []int, int) (application.CompareResult, error) {
+func (s stubCompareTrims) Execute(context.Context, []int, int, string) (application.CompareResult, error) {
 	return s.result, s.err
 }
 
@@ -218,6 +218,24 @@ func TestGetMarketSummary_missingYear(t *testing.T) {
 	}
 }
 
+func TestAssessDeal_missingCurrency(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/deal?year=2019&price=21500000", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.AssessDeal(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_CURRENCY" {
+		t.Fatalf("code = %q", errBody.Code)
+	}
+}
+
 func TestAssessDeal_missingPrice(t *testing.T) {
 	h := newTestHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/deal?year=2019", nil)
@@ -322,6 +340,24 @@ func TestCompareTrims_ok(t *testing.T) {
 	features, ok := body["features"].([]any)
 	if !ok || len(features) != 2 {
 		t.Fatalf("features = %v", body["features"])
+	}
+}
+
+func TestAssessDeal_invalidCurrency(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/1/deal?year=2019&price=21500000&currency=EUR", nil)
+	req.SetPathValue("trim_id", "1")
+	rec := httptest.NewRecorder()
+	h.AssessDeal(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var errBody errorBody
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "INVALID_CURRENCY" {
+		t.Fatalf("code = %q", errBody.Code)
 	}
 }
 

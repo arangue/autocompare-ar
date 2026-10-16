@@ -24,7 +24,7 @@ type fakeMarketGetter struct {
 	count  int
 }
 
-func (f fakeMarketGetter) Execute(context.Context, int, int) (domain.TrimMarketSummary, error) {
+func (f fakeMarketGetter) Execute(context.Context, int, int, string) (domain.TrimMarketSummary, error) {
 	median := f.median
 	return domain.TrimMarketSummary{Count: f.count, Median: &median, Currency: "ARS"}, nil
 }
@@ -47,7 +47,7 @@ func TestCompareTrims_featureMatrixFillsDash(t *testing.T) {
 		fakeMarketGetter{median: 25_000_000, count: 10},
 	)
 
-	got, err := uc.Execute(context.Background(), []int{1, 2}, 2019)
+	got, err := uc.Execute(context.Background(), []int{1, 2}, 2019, "")
 	if err != nil {
 		t.Fatal(err)
 	}

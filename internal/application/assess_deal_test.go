@@ -12,11 +12,15 @@ type fakeListingRepo struct {
 	err     error
 }
 
-func (f fakeListingRepo) ListByTrimYear(context.Context, int, int, int) ([]domain.Listing, error) {
+func (f fakeListingRepo) ListByTrimYear(context.Context, int, int, int, string) ([]domain.Listing, error) {
 	return nil, nil
 }
 
-func (f fakeListingRepo) MarketSummary(context.Context, int, int) (domain.MarketSummary, error) {
+func (f fakeListingRepo) MarketSummary(_ context.Context, _, _ int, currency string) (domain.MarketSummary, error) {
+	if f.summary.Currency == "" {
+		f.summary.Currency = "ARS"
+	}
+	_ = currency
 	return f.summary, f.err
 }
 
@@ -33,7 +37,7 @@ func int64Ptr(v int64) *int64 { return &v }
 func TestAssessDeal_insufficientData(t *testing.T) {
 	uc := NewAssessDeal(fakeListingRepo{summary: domain.MarketSummary{Count: 0}})
 
-	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +60,7 @@ func TestAssessDeal_belowMedian(t *testing.T) {
 		P75:    int64Ptr(27_100_000),
 	}})
 
-	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +86,7 @@ func TestAssessDeal_nearMedian(t *testing.T) {
 		P75:    int64Ptr(27_100_000),
 	}})
 
-	got, err := uc.Execute(context.Background(), 1, 2019, 26_000_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 26_000_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +103,7 @@ func TestAssessDeal_aboveMedian(t *testing.T) {
 		P75:    int64Ptr(27_100_000),
 	}})
 
-	got, err := uc.Execute(context.Background(), 1, 2019, 28_500_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 28_500_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +121,7 @@ func TestAssessDeal_fallbackWithoutPercentiles(t *testing.T) {
 		Median: int64Ptr(20_000_000),
 	}})
 
-	got, err := uc.Execute(context.Background(), 1, 2019, 18_000_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 18_000_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +135,7 @@ func TestAssessDeal_countBelowMinIsInsufficient(t *testing.T) {
 		Count:  4,
 		Median: int64Ptr(26_000_000),
 	}})
-	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,11 +154,43 @@ func TestAssessDeal_minSampleIsOK(t *testing.T) {
 		P25:    int64Ptr(25_200_000),
 		P75:    int64Ptr(27_100_000),
 	}})
-	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000)
+	got, err := uc.Execute(context.Background(), 1, 2019, 21_500_000, "ARS")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got.Status != domain.DealStatusOK {
 		t.Fatalf("status = %q", got.Status)
+	}
+}
+
+type recordingRepo struct {
+	fakeListingRepo
+	gotCurrency string
+}
+
+func (r *recordingRepo) MarketSummary(_ context.Context, _, _ int, currency string) (domain.MarketSummary, error) {
+	r.gotCurrency = currency
+	r.summary.Currency = "USD"
+	return r.summary, nil
+}
+
+func TestAssessDeal_requestedCurrency(t *testing.T) {
+	repo := &recordingRepo{fakeListingRepo: fakeListingRepo{summary: domain.MarketSummary{
+		Count:    10,
+		Median:   int64Ptr(38_000),
+		P25:      int64Ptr(32_000),
+		P75:      int64Ptr(44_000),
+		Currency: "USD",
+	}}}
+	uc := NewAssessDeal(repo)
+	got, err := uc.Execute(context.Background(), 1, 2019, 32_000, "USD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.gotCurrency != "USD" {
+		t.Fatalf("currency arg = %q", repo.gotCurrency)
+	}
+	if got.Currency != "USD" {
+		t.Fatalf("got currency = %q", got.Currency)
 	}
 }

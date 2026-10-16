@@ -32,11 +32,11 @@ type getTrimUseCase interface {
 }
 
 type listListingsUseCase interface {
-	Execute(ctx context.Context, trimID, year, limit int) ([]domain.Listing, error)
+	Execute(ctx context.Context, trimID, year, limit int, currency string) ([]domain.Listing, error)
 }
 
 type getMarketSummaryUseCase interface {
-	Execute(ctx context.Context, trimID, year int) (domain.TrimMarketSummary, error)
+	Execute(ctx context.Context, trimID, year int, currency string) (domain.TrimMarketSummary, error)
 }
 
 type listReferencesUseCase interface {
@@ -44,11 +44,11 @@ type listReferencesUseCase interface {
 }
 
 type assessDealUseCase interface {
-	Execute(ctx context.Context, trimID, year int, price int64) (domain.DealAssessment, error)
+	Execute(ctx context.Context, trimID, year int, price int64, currency string) (domain.DealAssessment, error)
 }
 
 type compareTrimsUseCase interface {
-	Execute(ctx context.Context, trimIDs []int, year int) (application.CompareResult, error)
+	Execute(ctx context.Context, trimIDs []int, year int, currency string) (application.CompareResult, error)
 }
 
 type Handler struct {
@@ -193,7 +193,13 @@ func (h *Handler) ListListings(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
-	listings, err := h.listListings.Execute(r.Context(), trimID, year, limit)
+	currency, ok := parseOptionalCurrency(r.URL.Query().Get("currency"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_CURRENCY", "currency must be ARS or USD")
+		return
+	}
+
+	listings, err := h.listListings.Execute(r.Context(), trimID, year, limit, currency)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list listings")
 		return
@@ -219,7 +225,13 @@ func (h *Handler) GetMarketSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summary, err := h.getMarketSummary.Execute(r.Context(), trimID, year)
+	currency, ok := parseOptionalCurrency(r.URL.Query().Get("currency"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_CURRENCY", "currency must be ARS or USD")
+		return
+	}
+
+	summary, err := h.getMarketSummary.Execute(r.Context(), trimID, year, currency)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get market summary")
 		return
@@ -282,7 +294,13 @@ func (h *Handler) AssessDeal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assessment, err := h.assessDeal.Execute(r.Context(), trimID, year, price)
+	currency, ok := parseDealCurrency(r.URL.Query().Get("currency"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_CURRENCY", "currency must be ARS or USD")
+		return
+	}
+
+	assessment, err := h.assessDeal.Execute(r.Context(), trimID, year, price, currency)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to assess deal")
 		return
@@ -308,7 +326,13 @@ func (h *Handler) CompareTrims(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.compareTrims.Execute(r.Context(), ids, year)
+	currency, ok := parseOptionalCurrency(r.URL.Query().Get("currency"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_CURRENCY", "currency must be ARS or USD")
+		return
+	}
+
+	result, err := h.compareTrims.Execute(r.Context(), ids, year, currency)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "trim not found")
@@ -334,4 +358,20 @@ func parseTrimIDs(raw string) ([]int, bool) {
 		ids = append(ids, n)
 	}
 	return ids, true
+}
+
+func parseOptionalCurrency(raw string) (string, bool) {
+	if strings.TrimSpace(raw) == "" {
+		return "", true
+	}
+	return parseDealCurrency(raw)
+}
+
+func parseDealCurrency(raw string) (string, bool) {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "ARS", "USD":
+		return strings.ToUpper(strings.TrimSpace(raw)), true
+	default:
+		return "", false
+	}
 }

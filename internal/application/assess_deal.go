@@ -15,8 +15,8 @@ func NewAssessDeal(listingRepository domain.ListingRepository) *AssessDeal {
 	return &AssessDeal{listingRepository: listingRepository}
 }
 
-func (u *AssessDeal) Execute(ctx context.Context, trimID, year int, price int64) (domain.DealAssessment, error) {
-	summary, err := u.listingRepository.MarketSummary(ctx, trimID, year)
+func (u *AssessDeal) Execute(ctx context.Context, trimID, year int, price int64, currency string) (domain.DealAssessment, error) {
+	summary, err := u.listingRepository.MarketSummary(ctx, trimID, year, currency)
 	if err != nil {
 		return domain.DealAssessment{}, err
 	}
@@ -33,7 +33,7 @@ func (u *AssessDeal) Execute(ctx context.Context, trimID, year int, price int64)
 			TrimID:     trimID,
 			Year:       year,
 			Price:      price,
-			Currency:   "ARS",
+			Currency:   currency,
 			Status:     domain.DealStatusInsufficientData,
 			Band:       domain.DealBandInsufficientData,
 			Market:     market,
@@ -48,7 +48,7 @@ func (u *AssessDeal) Execute(ctx context.Context, trimID, year int, price int64)
 		TrimID:     trimID,
 		Year:       year,
 		Price:      price,
-		Currency:   "ARS",
+		Currency:   currency,
 		Status:     domain.DealStatusOK,
 		Band:       classifyDealBand(price, summary),
 		DeltaARS:   &deltaARS,

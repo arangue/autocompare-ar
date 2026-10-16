@@ -11,7 +11,12 @@ export function formatMoney(amount: number, currency: string): string {
 }
 
 export function formatARSCompact(amount: number): string {
-  if (amount >= 1_000_000) {
+  return formatMoneyCompact(amount, "ARS");
+}
+
+export function formatMoneyCompact(amount: number, currency: string): string {
+  const code = currency === "USD" ? "USD" : "ARS";
+  if (code === "ARS" && amount >= 1_000_000) {
     const millions = amount / 1_000_000;
     const formatted =
       millions % 1 === 0
@@ -19,7 +24,7 @@ export function formatARSCompact(amount: number): string {
         : millions.toFixed(1).replace(".", ",");
     return `$${formatted}M`;
   }
-  return formatARS(amount);
+  return formatMoney(amount, code);
 }
 
 export function formatKm(km: number): string {

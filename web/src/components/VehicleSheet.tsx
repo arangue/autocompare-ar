@@ -13,7 +13,7 @@ import {
   getReferences,
   getTrim,
 } from "@/lib/api";
-import { formatARS, formatARSCompact, formatKm, formatMoney } from "@/lib/format";
+import { formatKm, formatMoney, formatMoneyCompact } from "@/lib/format";
 import type {
   DealAssessment,
   Listing,
@@ -93,6 +93,62 @@ function sourceLabel(source: string) {
   return source;
 }
 
+type CurrencyView = "ARS" | "USD" | "both";
+
+function parseCurrencyView(raw: string | null): CurrencyView {
+  const value = (raw ?? "").toUpperCase();
+  if (value === "ARS" || value === "USD") {
+    return value;
+  }
+  return "both";
+}
+
+function MarketStats({
+  market,
+  title,
+}: {
+  market: TrimMarketSummary | null;
+  title?: string;
+}) {
+  if (!market || market.count <= 0) {
+    return (
+      <div>
+        {title ? <p className="text-sm font-medium text-zinc-700">{title}</p> : null}
+        <p className="mt-1 text-sm text-zinc-600">
+          Sin publicaciones en esta moneda.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      {title ? <p className="text-sm font-medium text-zinc-700">{title}</p> : null}
+      <dl className="mt-2 grid gap-3 sm:grid-cols-2">
+        <div>
+          <dt className="text-sm text-zinc-500">Mediana</dt>
+          <dd className="text-xl font-semibold text-zinc-900">
+            {market.median != null
+              ? formatMoneyCompact(market.median, market.currency)
+              : "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm text-zinc-500">Publicaciones</dt>
+          <dd className="text-xl font-semibold text-zinc-900">{market.count}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-sm text-zinc-500">Rango</dt>
+          <dd className="text-base text-zinc-900">
+            {market.minimum != null && market.maximum != null
+              ? `${formatMoneyCompact(market.minimum, market.currency)} – ${formatMoneyCompact(market.maximum, market.currency)}`
+              : "—"}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
 export function VehicleSheet() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -103,6 +159,12 @@ export function VehicleSheet() {
   const [trim, setTrim] = useState<TrimDetail | null>(null);
   const [year, setYear] = useState<number | null>(null);
   const [market, setMarket] = useState<TrimMarketSummary | null>(null);
+  const [marketARS, setMarketARS] = useState<TrimMarketSummary | null>(null);
+  const [marketUSD, setMarketUSD] = useState<TrimMarketSummary | null>(null);
+  const [currencyView, setCurrencyView] = useState<CurrencyView>(() =>
+    parseCurrencyView(searchParams.get("currency")),
+  );
+  const [dealCurrency, setDealCurrency] = useState<"ARS" | "USD">("ARS");
   const [references, setReferences] = useState<ReferencePrice[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [deal, setDeal] = useState<DealAssessment | null>(null);
@@ -117,18 +179,37 @@ export function VehicleSheet() {
   const dealTimeoutRef = useRef<number | null>(null);
 
   const refreshYearData = useCallback(
-    async (selectedYear: number) => {
+    async (selectedYear: number, view: CurrencyView) => {
       setDataLoading(true);
       setError(null);
       try {
-        const [marketData, referencesData, listingsData] = await Promise.all([
-          getMarket(trimId, selectedYear),
-          getReferences(trimId, selectedYear),
-          getListings(trimId, selectedYear),
-        ]);
-        setMarket(marketData);
-        setReferences(referencesData);
-        setListings(listingsData);
+        if (view === "both") {
+          const [ars, usd, referencesData, listingsData] = await Promise.all([
+            getMarket(trimId, selectedYear, "ARS"),
+            getMarket(trimId, selectedYear, "USD"),
+            getReferences(trimId, selectedYear),
+            getListings(trimId, selectedYear),
+          ]);
+          setMarketARS(ars);
+          setMarketUSD(usd);
+          const preferred = (ars.count ?? 0) >= (usd.count ?? 0) ? ars : usd;
+          setMarket(preferred);
+          setDealCurrency(preferred.currency === "USD" ? "USD" : "ARS");
+          setReferences(referencesData);
+          setListings(listingsData);
+        } else {
+          const [marketData, referencesData, listingsData] = await Promise.all([
+            getMarket(trimId, selectedYear, view),
+            getReferences(trimId, selectedYear),
+            getListings(trimId, selectedYear, 50, view),
+          ]);
+          setMarket(marketData);
+          setMarketARS(view === "ARS" ? marketData : null);
+          setMarketUSD(view === "USD" ? marketData : null);
+          setDealCurrency(view);
+          setReferences(referencesData);
+          setListings(listingsData);
+        }
       } catch {
         setError("No pudimos cargar los datos de mercado para este año.");
       } finally {
@@ -160,7 +241,7 @@ export function VehicleSheet() {
         }
         setTrim(shown);
         setYear(selectedYear);
-        await refreshYearData(selectedYear);
+        await refreshYearData(selectedYear, parseCurrencyView(searchParams.get("currency")));
       })
       .catch((err) => {
         if (cancelled) {
@@ -185,16 +266,45 @@ export function VehicleSheet() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invalidId, trimId, refreshYearData]);
 
+  function replaceQuery(nextYear: number, view: CurrencyView) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("year", String(nextYear));
+    nextParams.set("currency", view);
+    router.replace(`/trims/${trimId}?${nextParams.toString()}`, { scroll: false });
+  }
+
   function onYearChange(nextYear: number) {
     setYear(nextYear);
     setDeal(null);
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set("year", String(nextYear));
-    router.replace(`/trims/${trimId}?${nextParams.toString()}`, { scroll: false });
+    replaceQuery(nextYear, currencyView);
     void getTrim(trimId, nextYear)
       .then(setTrim)
       .catch(() => setError("No pudimos cargar esta versión."));
-    void refreshYearData(nextYear);
+    void refreshYearData(nextYear, currencyView);
+  }
+
+  function onCurrencyViewChange(view: CurrencyView) {
+    setCurrencyView(view);
+    setDeal(null);
+    if (year == null) {
+      return;
+    }
+    replaceQuery(year, view);
+    void refreshYearData(year, view);
+  }
+
+  function onDealCurrencyChange(next: "ARS" | "USD") {
+    setDealCurrency(next);
+    setDeal(null);
+    const price = parsePriceInput(priceInput);
+    if (price == null || year == null) {
+      return;
+    }
+    setDealLoading(true);
+    getDeal(trimId, year, price, next)
+      .then(setDeal)
+      .catch(() => setDeal(null))
+      .finally(() => setDealLoading(false));
   }
 
   function onPriceChange(value: string) {
@@ -213,7 +323,7 @@ export function VehicleSheet() {
 
     setDealLoading(true);
     dealTimeoutRef.current = window.setTimeout(() => {
-      getDeal(trimId, year, price)
+      getDeal(trimId, year, price, dealCurrency)
         .then(setDeal)
         .catch(() => setDeal(null))
         .finally(() => setDealLoading(false));
@@ -300,11 +410,38 @@ export function VehicleSheet() {
               </select>
             </div>
           ) : null}
+          <div>
+            <p className="text-sm text-zinc-600">Moneda</p>
+            <div className="mt-1 flex gap-2" role="group" aria-label="Moneda del mercado">
+              {(
+                [
+                  ["both", "Ambos"],
+                  ["ARS", "ARS"],
+                  ["USD", "USD"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onCurrencyViewChange(value)}
+                  className={
+                    currencyView === value
+                      ? "rounded-xl bg-emerald-700 px-4 py-2 text-base font-medium text-white"
+                      : "rounded-xl border border-zinc-300 bg-white px-4 py-2 text-base text-zinc-700"
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => {
               const ids = addCompareId(trimId);
-              router.push(`/compare?trim_ids=${ids.join(",")}&year=${year}`);
+              router.push(
+                `/compare?trim_ids=${ids.join(",")}&year=${year}&currency=${currencyView}`,
+              );
             }}
             className="rounded-xl bg-emerald-700 px-5 py-2 text-base font-medium text-white transition hover:bg-emerald-800"
           >
@@ -326,27 +463,15 @@ export function VehicleSheet() {
           </h2>
           {dataLoading ? (
             <p className="mt-4 text-sm text-zinc-500">Cargando mercado…</p>
+          ) : currencyView === "both" ? (
+            <div className="mt-4 grid gap-6 sm:grid-cols-2">
+              <MarketStats market={marketARS} title="Pesos (ARS)" />
+              <MarketStats market={marketUSD} title="Dólares (USD)" />
+            </div>
           ) : market && market.count > 0 ? (
-            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm text-zinc-500">Mediana</dt>
-                <dd className="text-xl font-semibold text-zinc-900">
-                  {market.median != null ? formatARSCompact(market.median) : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-zinc-500">Publicaciones</dt>
-                <dd className="text-xl font-semibold text-zinc-900">{market.count}</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-sm text-zinc-500">Rango</dt>
-                <dd className="text-base text-zinc-900">
-                  {market.minimum != null && market.maximum != null
-                    ? `${formatARSCompact(market.minimum)} – ${formatARSCompact(market.maximum)}`
-                    : "—"}
-                </dd>
-              </div>
-            </dl>
+            <div className="mt-4">
+              <MarketStats market={market} />
+            </div>
           ) : (
             <p className="mt-4 text-sm text-zinc-600">
               No hay publicaciones suficientes para estimar el mercado de esta versión/año.
@@ -359,6 +484,9 @@ export function VehicleSheet() {
           onPriceChange={onPriceChange}
           deal={deal}
           loading={dealLoading}
+          currency={dealCurrency}
+          currencySelectable={currencyView === "both"}
+          onCurrencyChange={onDealCurrencyChange}
         />
 
         <p className="text-sm text-zinc-600">
@@ -492,7 +620,7 @@ export function VehicleSheet() {
                 >
                   <div>
                     <p className="font-medium text-zinc-900">
-                      {formatARS(listing.price)}{" "}
+                      {formatMoney(listing.price, listing.currency)}{" "}
                       <span className="text-xs font-normal text-zinc-500">
                         {sourceLabel(listing.source)}
                       </span>

@@ -12,7 +12,7 @@ type trimGetter interface {
 }
 
 type marketGetter interface {
-	Execute(ctx context.Context, trimID, year int) (domain.TrimMarketSummary, error)
+	Execute(ctx context.Context, trimID, year int, currency string) (domain.TrimMarketSummary, error)
 }
 
 type CompareSpecs struct {
@@ -58,7 +58,7 @@ func NewCompareTrims(getTrim trimGetter, getMarket marketGetter) *CompareTrims {
 	return &CompareTrims{getTrim: getTrim, getMarket: getMarket}
 }
 
-func (u *CompareTrims) Execute(ctx context.Context, trimIDs []int, year int) (CompareResult, error) {
+func (u *CompareTrims) Execute(ctx context.Context, trimIDs []int, year int, currency string) (CompareResult, error) {
 	trims := make([]CompareTrim, 0, len(trimIDs))
 	features := make([]CompareFeature, 0)
 	index := make(map[string]int)
@@ -68,7 +68,7 @@ func (u *CompareTrims) Execute(ctx context.Context, trimIDs []int, year int) (Co
 		if err != nil {
 			return CompareResult{}, err
 		}
-		summary, err := u.getMarket.Execute(ctx, id, year)
+		summary, err := u.getMarket.Execute(ctx, id, year, currency)
 		if err != nil {
 			return CompareResult{}, err
 		}

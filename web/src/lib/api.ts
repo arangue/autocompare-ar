@@ -60,9 +60,17 @@ export function getTrim(trimId: number, year?: number): Promise<TrimDetail> {
   return fetchJSON<TrimDetail>(`/api/v1/trims/${trimId}${params}`);
 }
 
-export function getMarket(trimId: number, year: number): Promise<TrimMarketSummary> {
+export function getMarket(
+  trimId: number,
+  year: number,
+  currency?: string,
+): Promise<TrimMarketSummary> {
+  const params = new URLSearchParams({ year: String(year) });
+  if (currency) {
+    params.set("currency", currency);
+  }
   return fetchJSON<TrimMarketSummary>(
-    `/api/v1/trims/${trimId}/market?year=${year}`,
+    `/api/v1/trims/${trimId}/market?${params}`,
   );
 }
 
@@ -70,10 +78,12 @@ export function getDeal(
   trimId: number,
   year: number,
   price: number,
+  currency: string,
 ): Promise<DealAssessment> {
   const params = new URLSearchParams({
     year: String(year),
     price: String(price),
+    currency,
   });
   return fetchJSON<DealAssessment>(`/api/v1/trims/${trimId}/deal?${params}`);
 }
@@ -82,11 +92,15 @@ export function getListings(
   trimId: number,
   year: number,
   limit = 50,
+  currency?: string,
 ): Promise<Listing[]> {
   const params = new URLSearchParams({
     year: String(year),
     limit: String(limit),
   });
+  if (currency) {
+    params.set("currency", currency);
+  }
   return fetchJSON<Listing[]>(`/api/v1/trims/${trimId}/listings?${params}`);
 }
 
@@ -99,10 +113,17 @@ export function getReferences(
   );
 }
 
-export function getCompare(trimIds: number[], year: number): Promise<CompareResult> {
+export function getCompare(
+  trimIds: number[],
+  year: number,
+  currency?: string,
+): Promise<CompareResult> {
   const params = new URLSearchParams({
     trim_ids: trimIds.join(","),
     year: String(year),
   });
+  if (currency) {
+    params.set("currency", currency);
+  }
   return fetchJSON<CompareResult>(`/api/v1/compare?${params}`);
 }
