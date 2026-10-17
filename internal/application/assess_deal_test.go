@@ -24,6 +24,14 @@ func (f fakeListingRepo) MarketSummary(_ context.Context, _, _ int, currency str
 	return f.summary, f.err
 }
 
+func (f fakeListingRepo) ListModelOffer(context.Context) (domain.ModelOfferList, error) {
+	return domain.ModelOfferList{Models: []domain.ModelOffer{}}, nil
+}
+
+func (f fakeListingRepo) GetModelOffer(context.Context, int) (domain.ModelOfferDetail, error) {
+	return domain.ModelOfferDetail{}, domain.ErrNotFound
+}
+
 func (f fakeListingRepo) Upsert(context.Context, domain.Listing) (bool, error) {
 	return false, nil
 }

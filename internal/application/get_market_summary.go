@@ -27,15 +27,21 @@ func (u *GetMarketSummary) Execute(ctx context.Context, trimID, year int, curren
 	if err != nil {
 		return domain.TrimMarketSummary{}, err
 	}
+	sources := summary.Sources
+	if sources == nil {
+		sources = []domain.MarketSource{}
+	}
 	return domain.TrimMarketSummary{
-		TrimID:   trimID,
-		Year:     year,
-		Count:    summary.Count,
-		Median:   summary.Median,
-		Minimum:  summary.Minimum,
-		Maximum:  summary.Maximum,
-		P25:      summary.P25,
-		P75:      summary.P75,
-		Currency: listingCurrency(summary.Currency),
+		TrimID:     trimID,
+		Year:       year,
+		Count:      summary.Count,
+		Median:     summary.Median,
+		Minimum:    summary.Minimum,
+		Maximum:    summary.Maximum,
+		P25:        summary.P25,
+		P75:        summary.P75,
+		Currency:   listingCurrency(summary.Currency),
+		ObservedAt: summary.ObservedAt,
+		Sources:    sources,
 	}, nil
 }

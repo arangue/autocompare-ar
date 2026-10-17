@@ -81,6 +81,11 @@ export function HomeSearch() {
           {loading ? "Buscando…" : "Buscar"}
         </button>
       </form>
+      <p className="mt-3 text-sm text-zinc-500">
+        <Link href="/modelos" className="font-medium text-emerald-700 hover:underline">
+          Ver modelos con oferta
+        </Link>
+      </p>
 
       {error ? (
         <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

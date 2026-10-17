@@ -13,7 +13,13 @@ import {
   getReferences,
   getTrim,
 } from "@/lib/api";
-import { formatKm, formatMoney, formatMoneyCompact } from "@/lib/format";
+import {
+  formatDateART,
+  formatKm,
+  formatMoney,
+  formatMoneyCompact,
+  sourceLabel,
+} from "@/lib/format";
 import type {
   DealAssessment,
   Listing,
@@ -87,12 +93,6 @@ function specItem(label: string, value: string | null) {
   );
 }
 
-function sourceLabel(source: string) {
-  if (source === "seed") return "Demostración";
-  if (source === "file") return "Carga manual";
-  return source;
-}
-
 type CurrencyView = "ARS" | "USD" | "both";
 
 function parseCurrencyView(raw: string | null): CurrencyView {
@@ -120,12 +120,14 @@ function MarketStats({
       </div>
     );
   }
+  const currencyLabel = market.currency === "USD" ? "USD" : "ARS";
+  const sources = market.sources ?? [];
   return (
     <div>
       {title ? <p className="text-sm font-medium text-zinc-700">{title}</p> : null}
       <dl className="mt-2 grid gap-3 sm:grid-cols-2">
         <div>
-          <dt className="text-sm text-zinc-500">Mediana</dt>
+          <dt className="text-sm text-zinc-500">Mediana de usados</dt>
           <dd className="text-xl font-semibold text-zinc-900">
             {market.median != null
               ? formatMoneyCompact(market.median, market.currency)
@@ -134,16 +136,43 @@ function MarketStats({
         </div>
         <div>
           <dt className="text-sm text-zinc-500">Publicaciones</dt>
-          <dd className="text-xl font-semibold text-zinc-900">{market.count}</dd>
+          <dd className="text-xl font-semibold text-zinc-900">
+            {market.count} avisos {currencyLabel}
+          </dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-sm text-zinc-500">Rango</dt>
+          <dt className="text-sm text-zinc-500">Franja habitual</dt>
           <dd className="text-base text-zinc-900">
-            {market.minimum != null && market.maximum != null
-              ? `${formatMoneyCompact(market.minimum, market.currency)} – ${formatMoneyCompact(market.maximum, market.currency)}`
+            {market.p25 != null && market.p75 != null
+              ? `${formatMoneyCompact(market.p25, market.currency)} – ${formatMoneyCompact(market.p75, market.currency)}`
               : "—"}
           </dd>
         </div>
+        {market.minimum != null && market.maximum != null ? (
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-zinc-500">Extremos</dt>
+            <dd className="text-sm text-zinc-600">
+              {formatMoneyCompact(market.minimum, market.currency)} –{" "}
+              {formatMoneyCompact(market.maximum, market.currency)}
+            </dd>
+          </div>
+        ) : null}
+        {market.observed_at ? (
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-zinc-500">Corte</dt>
+            <dd className="text-sm text-zinc-900">{formatDateART(market.observed_at)}</dd>
+          </div>
+        ) : null}
+        {sources.length > 0 ? (
+          <div className="sm:col-span-2">
+            <dt className="text-sm text-zinc-500">Fuentes</dt>
+            <dd className="text-sm text-zinc-900">
+              {sources
+                .map((item) => `${sourceLabel(item.source)} ${item.count}`)
+                .join(" · ")}
+            </dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );
@@ -461,6 +490,9 @@ export function VehicleSheet() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Mercado
           </h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Mediana de usados. Los 0 km siguen en la lista de publicaciones.
+          </p>
           {dataLoading ? (
             <p className="mt-4 text-sm text-zinc-500">Cargando mercado…</p>
           ) : currencyView === "both" ? (

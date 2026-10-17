@@ -67,7 +67,9 @@ func main() {
 	listReferences := application.NewListReferences(pricingRepo)
 	assessDeal := application.NewAssessDeal(listingRepo)
 	compareTrims := application.NewCompareTrims(getTrim, getMarketSummary)
-	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, listListings, getMarketSummary, listReferences, assessDeal, compareTrims, pool)
+	listModelOffer := application.NewListModelOffer(listingRepo)
+	getModelOffer := application.NewGetModelOffer(listingRepo)
+	handler := httpdelivery.NewHandler(listBrands, listModelsByBrand, searchTrims, getTrim, listListings, getMarketSummary, listReferences, assessDeal, compareTrims, listModelOffer, getModelOffer, pool)
 	router := httpdelivery.NewRouter(handler)
 
 	port := os.Getenv("PORT")

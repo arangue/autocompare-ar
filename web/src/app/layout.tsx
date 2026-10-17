@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { SiteNav } from "@/components/SiteNav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className="flex min-h-full flex-col bg-zinc-50 text-zinc-900"
         suppressHydrationWarning
       >
+        <SiteNav />
         {children}
         <footer className="mt-auto border-t border-zinc-200 px-6 py-4 text-xs text-zinc-500">
           Estimación a partir de publicaciones comparables; el precio publicado

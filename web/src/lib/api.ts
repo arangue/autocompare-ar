@@ -3,6 +3,8 @@ import type {
   CompareResult,
   DealAssessment,
   Listing,
+  ModelOfferDetail,
+  ModelOfferList,
   ReferencePrice,
   TrimDetail,
   TrimMarketSummary,
@@ -126,4 +128,12 @@ export function getCompare(
     params.set("currency", currency);
   }
   return fetchJSON<CompareResult>(`/api/v1/compare?${params}`);
+}
+
+export function listModelOffer(): Promise<ModelOfferList> {
+  return fetchJSON<ModelOfferList>("/api/v1/models");
+}
+
+export function getModelOffer(modelId: number): Promise<ModelOfferDetail> {
+  return fetchJSON<ModelOfferDetail>(`/api/v1/models/${modelId}`);
 }

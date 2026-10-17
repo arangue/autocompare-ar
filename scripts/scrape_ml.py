@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Collect Mercado Libre asking prices for one brand.
+"""Collect Mercado Libre asking prices for one search path.
 
-The CSV is a price feed. It does not assign trims. The worker matches each
-title to the carsbase catalog.
+The path is a brand (`ford`) or brand-model (`fiat-siena`). The CSV is a
+price feed. It does not assign trims. The worker matches each title to the
+carsbase catalog.
 """
 
 import argparse
 import random
+import sys
 import time
+import unicodedata
 
 import pandas as pd
 import requests
@@ -15,6 +18,7 @@ from bs4 import BeautifulSoup
 
 # Mercado Libre serves about 48 listings per page and 404s past page 42.
 DEFAULT_PAGES = 42
+SKIP_EXIT = 2
 
 HEADERS = {
     "User-Agent": (
@@ -30,8 +34,23 @@ HEADERS = {
 }
 
 
-def page_url(brand: str, page: int) -> str:
-    base = f"https://autos.mercadolibre.com.ar/{brand}"
+def slug(text: str) -> str:
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
+    parts: list[str] = []
+    hyphen = False
+    for c in text.casefold():
+        if c.isalnum():
+            parts.append(c)
+            hyphen = False
+        elif not hyphen:
+            parts.append("-")
+            hyphen = True
+    return "".join(parts).strip("-")
+
+
+def page_url(path: str, page: int) -> str:
+    base = f"https://autos.mercadolibre.com.ar/{path}"
     if page == 0:
         return base
     return f"{base}_Desde_{page * 48 + 1}"
@@ -63,20 +82,29 @@ def listing_currency(price_root) -> str:
     return "ARS"
 
 
-def scrape(brand: str, pages: int) -> list[dict]:
+def scrape(path: str, pages: int) -> list[dict] | None:
     rows = []
     for page in range(pages):
-        url = page_url(brand, page)
+        url = page_url(path, page)
         print(f"Scraping page {page + 1}: {url}")
         response = requests.get(url, headers=HEADERS, timeout=30)
+        if response.status_code == 404:
+            print(f"404 skip: {url}")
+            if page == 0:
+                return None
+            break
         if response.status_code != 200:
             print(f"Failed to fetch page. Status code: {response.status_code}")
+            if page == 0:
+                return None
             break
 
         soup = BeautifulSoup(response.text, "html.parser")
         items = soup.select("li.ui-search-layout__item")
         if not items:
             print("No listings found. Mercado Libre markup may have changed.")
+            if page == 0:
+                return None
             break
 
         for item in items:
@@ -116,8 +144,8 @@ def scrape(brand: str, pages: int) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "brand",
-        help="brand path on autos.mercadolibre.com.ar, for example ford",
+        "path",
+        help="search path on autos.mercadolibre.com.ar, for example ford or fiat-siena",
     )
     parser.add_argument(
         "--pages",
@@ -128,14 +156,22 @@ def main() -> None:
     parser.add_argument(
         "--output",
         default="",
-        help="CSV path (default mercadolibre_<brand>_cars.csv)",
+        help="CSV path (default mercadolibre_<path>_cars.csv)",
     )
     args = parser.parse_args()
     if args.pages < 1:
         parser.error("--pages must be at least 1")
 
-    output = args.output or f"mercadolibre_{args.brand}_cars.csv"
-    rows = scrape(args.brand, args.pages)
+    path = slug(args.path) if args.path else ""
+    if not path:
+        parser.error("path is empty")
+
+    rows = scrape(path, args.pages)
+    if not rows:
+        print(f"skip {path}: no listings")
+        sys.exit(SKIP_EXIT)
+
+    output = args.output or f"mercadolibre_{path}_cars.csv"
     df = pd.DataFrame(
         rows,
         columns=["Title", "Price", "Currency", "Year", "Kilometers", "Location", "URL"],

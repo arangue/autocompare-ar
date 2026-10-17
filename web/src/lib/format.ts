@@ -30,3 +30,23 @@ export function formatMoneyCompact(amount: number, currency: string): string {
 export function formatKm(km: number): string {
   return `${new Intl.NumberFormat("es-AR").format(km)} km`;
 }
+
+export function formatDateART(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+export function sourceLabel(source: string): string {
+  if (source === "seed") return "Demostración";
+  if (source === "file") return "Carga manual";
+  if (source === "mercadolibre") return "Mercado Libre";
+  return source;
+}

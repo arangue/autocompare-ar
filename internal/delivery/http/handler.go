@@ -51,6 +51,14 @@ type compareTrimsUseCase interface {
 	Execute(ctx context.Context, trimIDs []int, year int, currency string) (application.CompareResult, error)
 }
 
+type listModelOfferUseCase interface {
+	Execute(ctx context.Context) (domain.ModelOfferList, error)
+}
+
+type getModelOfferUseCase interface {
+	Execute(ctx context.Context, modelID int) (domain.ModelOfferDetail, error)
+}
+
 type Handler struct {
 	listBrands        listBrandsUseCase
 	listModelsByBrand listModelsByBrandUseCase
@@ -61,11 +69,13 @@ type Handler struct {
 	listReferences    listReferencesUseCase
 	assessDeal        assessDealUseCase
 	compareTrims      compareTrimsUseCase
+	listModelOffer    listModelOfferUseCase
+	getModelOffer     getModelOfferUseCase
 	db                pinger
 }
 
-func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, assessDeal assessDealUseCase, compareTrims compareTrimsUseCase, db pinger) *Handler {
-	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, assessDeal: assessDeal, compareTrims: compareTrims, db: db}
+func NewHandler(listBrands listBrandsUseCase, listModelsByBrand listModelsByBrandUseCase, searchTrims searchTrimsUseCase, getTrim getTrimUseCase, listListings listListingsUseCase, getMarketSummary getMarketSummaryUseCase, listReferences listReferencesUseCase, assessDeal assessDealUseCase, compareTrims compareTrimsUseCase, listModelOffer listModelOfferUseCase, getModelOffer getModelOfferUseCase, db pinger) *Handler {
+	return &Handler{listBrands: listBrands, listModelsByBrand: listModelsByBrand, searchTrims: searchTrims, getTrim: getTrim, listListings: listListings, getMarketSummary: getMarketSummary, listReferences: listReferences, assessDeal: assessDeal, compareTrims: compareTrims, listModelOffer: listModelOffer, getModelOffer: getModelOffer, db: db}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -342,6 +352,40 @@ func (h *Handler) CompareTrims(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) ListModelOffer(w http.ResponseWriter, r *http.Request) {
+	list, err := h.listModelOffer.Execute(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list models")
+		return
+	}
+	if list.Models == nil {
+		list.Models = []domain.ModelOffer{}
+	}
+	writeJSON(w, http.StatusOK, list)
+}
+
+func (h *Handler) GetModelOffer(w http.ResponseWriter, r *http.Request) {
+	modelID, err := strconv.Atoi(r.PathValue("model_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "model_id must be an integer")
+		return
+	}
+
+	detail, err := h.getModelOffer.Execute(r.Context(), modelID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "model not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get model")
+		return
+	}
+	if detail.Trims == nil {
+		detail.Trims = []domain.ModelOfferTrim{}
+	}
+	writeJSON(w, http.StatusOK, detail)
 }
 
 func parseTrimIDs(raw string) ([]int, bool) {

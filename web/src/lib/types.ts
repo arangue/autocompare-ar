@@ -62,6 +62,11 @@ export type Listing = {
   last_seen_at: string;
 };
 
+export type MarketSource = {
+  source: string;
+  count: number;
+};
+
 export type TrimMarketSummary = {
   trim_id: number;
   year: number;
@@ -72,6 +77,8 @@ export type TrimMarketSummary = {
   p25: number | null;
   p75: number | null;
   currency: string;
+  observed_at: string | null;
+  sources: MarketSource[];
 };
 
 export type ReferencePrice = {
@@ -114,7 +121,45 @@ export type CompareSpecs = {
 export type CompareMarket = {
   count: number;
   median: number | null;
+  p25: number | null;
+  p75: number | null;
   currency: string;
+};
+
+export type ModelOffer = {
+  model_id: number;
+  model_name: string;
+  brand_id: number;
+  brand_name: string;
+  count: number;
+};
+
+export type ModelOfferList = {
+  observed_at: string | null;
+  models: ModelOffer[];
+};
+
+export type ModelOfferYear = {
+  year: number;
+  count: number;
+};
+
+export type ModelOfferTrim = {
+  trim_id: number;
+  trim_name: string;
+  generation_name: string;
+  count: number;
+  years: ModelOfferYear[];
+};
+
+export type ModelOfferDetail = {
+  model_id: number;
+  model_name: string;
+  brand_id: number;
+  brand_name: string;
+  count: number;
+  observed_at: string | null;
+  trims: ModelOfferTrim[];
 };
 
 export type CompareTrim = {

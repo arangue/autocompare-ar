@@ -28,6 +28,23 @@ function parseCurrencyView(raw: string): "ARS" | "USD" | "both" {
   return "both";
 }
 
+function MarketFranja({
+  market,
+  currency,
+}: {
+  market: CompareTrim["market"] | undefined;
+  currency: "ARS" | "USD";
+}) {
+  if (!market || market.p25 == null || market.p75 == null) {
+    return null;
+  }
+  return (
+    <span className="block font-normal text-zinc-500">
+      {formatMoneyCompact(market.p25, currency)} – {formatMoneyCompact(market.p75, currency)}
+    </span>
+  );
+}
+
 function specCell(trim: CompareTrim, field: "engine" | "transmission" | "horsepower"): string {
   if (!trim.specs) {
     return "—";
@@ -195,6 +212,7 @@ export default async function ComparePage({
                         <span className="ml-1 font-normal text-zinc-500">
                           ARS ({trim.market.count})
                         </span>
+                        <MarketFranja market={trim.market} currency="ARS" />
                       </span>
                       <span>
                         {usdByTrim[trim.trim_id]?.median != null
@@ -203,6 +221,7 @@ export default async function ComparePage({
                         <span className="ml-1 font-normal text-zinc-500">
                           USD ({usdByTrim[trim.trim_id]?.count ?? 0})
                         </span>
+                        <MarketFranja market={usdByTrim[trim.trim_id]} currency="USD" />
                       </span>
                     </span>
                   ) : (
@@ -213,6 +232,10 @@ export default async function ComparePage({
                       <span className="ml-1 font-normal text-zinc-500">
                         ({trim.market.count})
                       </span>
+                      <MarketFranja
+                        market={trim.market}
+                        currency={trim.market.currency === "USD" ? "USD" : "ARS"}
+                      />
                     </>
                   )}
                 </td>

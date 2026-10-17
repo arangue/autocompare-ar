@@ -86,6 +86,77 @@ Lists models for a brand. Unknown brand or no models returns `[]`.
 {"code":"INTERNAL_ERROR","message":"failed to list models by brand"}
 ```
 
+### `GET /api/v1/models`
+
+Catalog models (carsbase) that have at least one active **used** listing, busiest first. Count is ads, not a model-level median. `observed_at` is the newest `last_seen_at` in that used set.
+
+**200**
+
+```json
+{
+  "observed_at": "2026-10-16T16:00:00Z",
+  "models": [
+    {
+      "model_id": 1,
+      "model_name": "Corolla",
+      "brand_id": 2,
+      "brand_name": "Toyota",
+      "count": 2089
+    }
+  ]
+}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to list models"}
+```
+
+### `GET /api/v1/models/{model_id}`
+
+One catalog model with used listing counts per trim and year. No pooled median. UI: `/modelos/{model_id}`.
+
+**200**
+
+```json
+{
+  "model_id": 1,
+  "model_name": "Corolla",
+  "brand_id": 2,
+  "brand_name": "Toyota",
+  "count": 80,
+  "observed_at": "2026-10-16T16:00:00Z",
+  "trims": [
+    {
+      "trim_id": 1,
+      "trim_name": "XEi 2.0 CVT",
+      "generation_name": "E210",
+      "count": 40,
+      "years": [{"year": 2019, "count": 31}, {"year": 2018, "count": 9}]
+    }
+  ]
+}
+```
+
+**400** — `model_id` not an integer
+
+```json
+{"code":"INVALID_ID","message":"model_id must be an integer"}
+```
+
+**404** — unknown model
+
+```json
+{"code":"NOT_FOUND","message":"model not found"}
+```
+
+**500**
+
+```json
+{"code":"INTERNAL_ERROR","message":"failed to get model"}
+```
+
 ### `GET /api/v1/search/trims?q=&limit=`
 
 Free-text search across brand, model, and trim names. Default `limit` is 20, max 50. Empty or whitespace `q` returns `[]`.
@@ -208,7 +279,7 @@ Active listings for a trim and year, ordered by price ascending. Default `limit`
 
 ### `GET /api/v1/trims/{trim_id}/market?year=&currency=`
 
-Market price distribution from active listings for a trim and year. `currency` is optional `ARS` or `USD`; omit it to use the majority currency. To show both, the UI requests ARS and USD separately so medians are never mixed.
+Market price distribution from active **used** listings for a trim and year (`km > 0` or unknown). 0 km ads stay in `/listings` and are left out of the median and `/deal`. `currency` is optional `ARS` or `USD`; omit it to use the majority currency. To show both, the UI requests ARS and USD separately so medians are never mixed.
 
 **200** — with listings
 
@@ -222,9 +293,13 @@ Market price distribution from active listings for a trim and year. `currency` i
   "maximum": 29000000,
   "p25": 25200000,
   "p75": 27100000,
-  "currency": "ARS"
+  "currency": "ARS",
+  "observed_at": "2026-10-16T16:00:00Z",
+  "sources": [{"source": "mercadolibre", "count": 10}]
 }
 ```
+
+`observed_at` is `MAX(last_seen_at)` of that used sample. `sources` is the same rows grouped by `listings.source`.
 
 **200** — no listings (`count` 0, percentiles `null`)
 
@@ -238,7 +313,9 @@ Market price distribution from active listings for a trim and year. `currency` i
   "maximum": null,
   "p25": null,
   "p75": null,
-  "currency": "ARS"
+  "currency": "ARS",
+  "observed_at": null,
+  "sources": []
 }
 ```
 
@@ -299,7 +376,7 @@ Guide and fiscal reference prices (CCA, ACARA, DNRPA) for a trim and year. DNRPA
 
 ### `GET /api/v1/trims/{trim_id}/deal?year=&price=&currency=`
 
-Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”. `currency` is required (`ARS` or `USD`) and the median uses only listings in that currency. `ok` requiere al menos 5 publicaciones activas en esa moneda; si no, `insufficient_data`. `MARKET_EXCLUDE_SEED` defaults to false locally, so demo `source=seed` rows stay in the median and the list. Set it to `true` on the API only when that trim and year already has another source (see `docs/runbooks/railway.md`).
+Compare an asking price to the market median and percentile band for a trim and year. Hero endpoint for “¿está barato?”. `currency` is required (`ARS` or `USD`) and the median uses only used listings in that currency. `ok` requiere al menos 5 publicaciones activas usadas en esa moneda; si no, `insufficient_data`. `MARKET_EXCLUDE_SEED` defaults to false locally, so demo `source=seed` rows stay in the median and the list. Set it to `true` on the API only when that trim and year already has another source (see `docs/runbooks/railway.md`).
 
 **200** — enough listings
 
@@ -379,7 +456,7 @@ Side-by-side compare of 2–3 trims for one year: identity, key specs, market me
       "brand_name": "Toyota",
       "model_name": "Corolla",
       "specs": { "engine": "2.0", "transmission": "CVT", "horsepower": 170 },
-      "market": { "count": 10, "median": 26000000, "currency": "ARS" }
+      "market": { "count": 10, "median": 26000000, "p25": 25200000, "p75": 27100000, "currency": "ARS" }
     },
     {
       "trim_id": 2,
@@ -387,7 +464,7 @@ Side-by-side compare of 2–3 trims for one year: identity, key specs, market me
       "brand_name": "Toyota",
       "model_name": "Corolla",
       "specs": { "engine": "1.8", "transmission": "CVT", "horsepower": 140 },
-      "market": { "count": 3, "median": 20500000, "currency": "ARS" }
+      "market": { "count": 3, "median": 20500000, "p25": 19800000, "p75": 21400000, "currency": "ARS" }
     }
   ],
   "features": [
@@ -514,6 +591,8 @@ curl 'http://localhost:8080/api/v1/trims/1/market?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/references?year=2019'
 curl 'http://localhost:8080/api/v1/trims/1/deal?year=2019&price=21500000&currency=ARS'
 curl 'http://localhost:8080/api/v1/compare?trim_ids=1,2&year=2019'
+curl 'http://localhost:8080/api/v1/models'
+curl 'http://localhost:8080/api/v1/models/1'
 ```
 
 ## Worker ingest
@@ -526,16 +605,29 @@ go run ./cmd/worker path/to/file.csv             # or set INGEST_FILE
 go run ./cmd/worker -dry-run testdata/listings.titles.json   # first prod run: resolve titles, no writes
 go run ./cmd/worker -expire-days 14 testdata/listings.json   # upsert first, then expire
 INGEST_FILE= go run ./cmd/worker -expire-days 14             # expire only (no file)
-python3 scripts/scrape_ml.py ford                # up to 42 pages, writes mercadolibre_ford_cars.csv
+python3 scripts/scrape_ml.py ford                # brand crawl, up to 42 pages
+python3 scripts/scrape_ml.py fiat-siena          # model path; 404 on page 1 exits 2
 go run ./cmd/worker -dry-run -source ml -brand Ford mercadolibre_ford_cars.csv
 go run ./cmd/worker -source ml -brand Ford mercadolibre_ford_cars.csv
+go run ./cmd/worker -source ml -list-thin        # brand, model, ML path (TSV) for cells with <5 used ads
+go run ./cmd/worker -source ml -expire-days 1                # after a full brand round
+go run ./cmd/worker -source ml -expire-before 2026-10-16T16:00:00Z
 ```
 
 First production run is always `go run ./cmd/worker -dry-run testdata/listings.titles.json`. That file has `raw_title` and no `trim_id`, so it exercises alias Resolve. `-dry-run` logs matches and does not upsert. Needs Postgres (`make db-up`); if `DATABASE_URL` is unset, the worker uses `.env` or the same local default as `make`.
 
-`-expire-days` default 0 is a no-op. Expire runs **after** upsert: rows in the file get `last_seen_at=NOW()` and are not expired. Unset `INGEST_FILE` (the Makefile `.env` sets it) for expire-only. Rows are deactivated, not deleted.
+`-expire-days` default 0 is a no-op. Expire runs **after** upsert: rows in the file get `last_seen_at=NOW()` and are not expired. Unset `INGEST_FILE` (the Makefile `.env` sets it) for expire-only. Rows are deactivated, not deleted. `-expire-before` is an RFC3339 cutoff instead of a sliding window. `-expire-source` limits the update to one `listings.source`. Do not pass expire flags with a single-brand `-source ml` CSV: that would deactivate other brands. After every brand is ingested, run `-source ml -expire-days 1` (defaults `-expire-source mercadolibre`).
 
-Mercado Libre asking prices come from `scripts/scrape_ml.py`. `-source ml` keeps a card when one carsbase trim fits that title and year. If the title is ambiguous, the worker opens the listing page for doors and transmission and tries again. `-brand` is the catalog brand name (`Ford`, not the URL slug). Other cards are logged and skipped. CCA and ACARA guide PDFs use `-source acara` and `-source cca`.
+Mercado Libre asking prices come from `scripts/scrape_ml.py`. A brand path (`ford`) is the wide net; Mercado Libre 404s after 42 pages, so volume ads crowd out a Siena. A model path (`fiat-siena`) uses the same cap on that model only. `-list-thin` prints models in the 19 volume brands whose busiest used `(trim, year, currency)` cell has fewer than 5 ads. Fill them with a sequential loop (do not expire per model):
+
+```bash
+go run ./cmd/worker -source ml -list-thin | while IFS=$'\t' read -r brand model path; do
+  python3 scripts/scrape_ml.py "$path" || continue
+  go run ./cmd/worker -source ml -brand "$brand" "mercadolibre_${path}_cars.csv"
+done
+```
+
+`-source ml` keeps a card when one carsbase trim fits that title and year. If the title is ambiguous, the worker opens the listing page for doors and transmission and tries again. `-brand` is the catalog brand name (`Ford`, not the URL slug). Other cards are logged and skipped. CCA and ACARA guide PDFs use `-source acara` and `-source cca`.
 
 JSON shape:
 

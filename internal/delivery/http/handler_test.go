@@ -91,6 +91,24 @@ func (s stubCompareTrims) Execute(context.Context, []int, int, string) (applicat
 	return s.result, s.err
 }
 
+type stubListModelOffer struct {
+	list domain.ModelOfferList
+	err  error
+}
+
+func (s stubListModelOffer) Execute(context.Context) (domain.ModelOfferList, error) {
+	return s.list, s.err
+}
+
+type stubGetModelOffer struct {
+	detail domain.ModelOfferDetail
+	err    error
+}
+
+func (s stubGetModelOffer) Execute(context.Context, int) (domain.ModelOfferDetail, error) {
+	return s.detail, s.err
+}
+
 func newTestHandler() *Handler {
 	return NewHandler(
 		stubListBrands{},
@@ -102,6 +120,8 @@ func newTestHandler() *Handler {
 		stubListReferences{},
 		stubAssessDeal{},
 		stubCompareTrims{},
+		stubListModelOffer{},
+		stubGetModelOffer{},
 		stubPinger{},
 	)
 }
@@ -117,6 +137,8 @@ func TestListBrands_snakeCaseJSON(t *testing.T) {
 		stubListReferences{},
 		stubAssessDeal{},
 		stubCompareTrims{},
+		stubListModelOffer{},
+		stubGetModelOffer{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/brands", nil)
@@ -168,6 +190,8 @@ func TestGetTrim_notFound(t *testing.T) {
 		stubListReferences{},
 		stubAssessDeal{},
 		stubCompareTrims{},
+		stubListModelOffer{},
+		stubGetModelOffer{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/trims/99", nil)
@@ -286,6 +310,8 @@ func TestCompareTrims_notFound(t *testing.T) {
 		stubListReferences{},
 		stubAssessDeal{},
 		compare,
+		stubListModelOffer{},
+		stubGetModelOffer{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/compare?trim_ids=1,99&year=2019", nil)
@@ -321,6 +347,8 @@ func TestCompareTrims_ok(t *testing.T) {
 		stubListReferences{},
 		stubAssessDeal{},
 		compare,
+		stubListModelOffer{},
+		stubGetModelOffer{},
 		stubPinger{},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/compare?trim_ids=1,2&year=2019", nil)
@@ -377,5 +405,80 @@ func TestAssessDeal_missingYear(t *testing.T) {
 	}
 	if errBody.Code != "INVALID_YEAR" {
 		t.Fatalf("code = %q", errBody.Code)
+	}
+}
+
+func TestListModelOffer_ok(t *testing.T) {
+	observed := time.Date(2026, 10, 16, 16, 0, 0, 0, time.UTC)
+	h := NewHandler(
+		stubListBrands{},
+		stubListModels{},
+		stubSearchTrims{},
+		stubGetTrim{},
+		stubListListings{},
+		stubGetMarketSummary{},
+		stubListReferences{},
+		stubAssessDeal{},
+		stubCompareTrims{},
+		stubListModelOffer{list: domain.ModelOfferList{
+			ObservedAt: &observed,
+			Models: []domain.ModelOffer{
+				{ModelID: 1, ModelName: "Corolla", BrandID: 2, BrandName: "Toyota", Count: 10},
+			},
+		}},
+		stubGetModelOffer{},
+		stubPinger{},
+	)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/models", nil)
+	rec := httptest.NewRecorder()
+	h.ListModelOffer(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := body["observed_at"]; !ok {
+		t.Fatalf("missing observed_at: %v", body)
+	}
+	models, ok := body["models"].([]any)
+	if !ok || len(models) != 1 {
+		t.Fatalf("models = %v", body["models"])
+	}
+}
+
+func TestGetModelOffer_notFound(t *testing.T) {
+	h := NewHandler(
+		stubListBrands{},
+		stubListModels{},
+		stubSearchTrims{},
+		stubGetTrim{},
+		stubListListings{},
+		stubGetMarketSummary{},
+		stubListReferences{},
+		stubAssessDeal{},
+		stubCompareTrims{},
+		stubListModelOffer{},
+		stubGetModelOffer{err: domain.ErrNotFound},
+		stubPinger{},
+	)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/models/99", nil)
+	req.SetPathValue("model_id", "99")
+	rec := httptest.NewRecorder()
+	h.GetModelOffer(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
+func TestGetModelOffer_invalidID(t *testing.T) {
+	h := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/models/x", nil)
+	req.SetPathValue("model_id", "x")
+	rec := httptest.NewRecorder()
+	h.GetModelOffer(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d", rec.Code)
 	}
 }

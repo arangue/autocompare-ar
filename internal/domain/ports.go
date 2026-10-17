@@ -14,9 +14,13 @@ type VehicleRepository interface {
 
 type ListingRepository interface {
 	ListByTrimYear(ctx context.Context, trimID, year, limit int, currency string) ([]Listing, error)
-	// MarketSummary is active listings for trim and year.
+	// MarketSummary is active used listings for trim and year (km > 0 or unknown).
 	// Empty currency uses the majority currency; ARS or USD filters to that one.
 	MarketSummary(ctx context.Context, trimID, year int, currency string) (MarketSummary, error)
+	// ListModelOffer is catalog models with active used listings, busiest first.
+	ListModelOffer(ctx context.Context) (ModelOfferList, error)
+	// GetModelOffer is one catalog model with used listing counts per trim and year.
+	GetModelOffer(ctx context.Context, modelID int) (ModelOfferDetail, error)
 	// Upsert inserts or updates by (source, external_id). inserted is true on insert.
 	Upsert(ctx context.Context, listing Listing) (inserted bool, err error)
 	// ExpireStale sets active=false on listings not seen in the last days.

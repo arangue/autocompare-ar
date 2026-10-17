@@ -33,10 +33,23 @@ func main() {
 
 	dryRun := flag.Bool("dry-run", false, "log matches without writing")
 	expireDays := flag.Int("expire-days", 0, "deactivate listings not seen in N days")
+	expireBefore := flag.String("expire-before", "", "RFC3339 cutoff; deactivate listings last seen before this")
+	expireSource := flag.String("expire-source", "", "limit expire to this listings.source (for example mercadolibre)")
 	source := flag.String("source", "", "acara, cca, carsbase, ml, or link")
 	brand := flag.String("brand", "", "carsbase brand name for -source ml")
+	listThin := flag.Bool("list-thin", false, "print brand, model, and ML path for under-sampled models")
 	observed := flag.String("observed", "", "guide date YYYY-MM-DD (default today)")
 	flag.Parse()
+
+	cutoff, err := parseExpireBefore(*expireBefore)
+	if err != nil {
+		slog.Error("expire-before", "error", err)
+		os.Exit(1)
+	}
+	if *expireDays > 0 && !cutoff.IsZero() {
+		slog.Error("use -expire-days or -expire-before, not both")
+		os.Exit(1)
+	}
 
 	path := flag.Arg(0)
 	if path == "" {
@@ -50,7 +63,27 @@ func main() {
 		return
 	}
 	if *source == "ml" {
-		if err := runML(flag.Arg(0), *brand, *dryRun); err != nil {
+		if *listThin {
+			slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+			if err := runListThin(); err != nil {
+				slog.Error("list-thin failed", "error", err)
+				os.Exit(1)
+			}
+			return
+		}
+		mlPath := flag.Arg(0)
+		if mlPath == "" && (*expireDays > 0 || !cutoff.IsZero()) {
+			src := *expireSource
+			if src == "" {
+				src = "mercadolibre"
+			}
+			if err := runExpire(*dryRun, *expireDays, cutoff, src); err != nil {
+				slog.Error("expire failed", "error", err)
+				os.Exit(1)
+			}
+			return
+		}
+		if err := runML(mlPath, *brand, *dryRun); err != nil {
 			slog.Error("ml ingest failed", "error", err)
 			os.Exit(1)
 		}
@@ -78,8 +111,8 @@ func main() {
 		slog.Error("unknown source", "source", *source)
 		os.Exit(1)
 	}
-	if path == "" && *expireDays <= 0 {
-		slog.Error("provide a file path argument or INGEST_FILE, or -expire-days N")
+	if path == "" && *expireDays <= 0 && cutoff.IsZero() {
+		slog.Error("provide a file path argument or INGEST_FILE, or -expire-days N / -expire-before")
 		os.Exit(1)
 	}
 
@@ -174,9 +207,9 @@ func main() {
 	}
 
 	expired := int64(0)
-	if !*dryRun && *expireDays > 0 {
+	if !*dryRun && (*expireDays > 0 || !cutoff.IsZero()) {
 		var err error
-		expired, err = listingRepo.ExpireStale(ctx, *expireDays)
+		expired, err = expireListings(ctx, listingRepo, *expireDays, cutoff, *expireSource)
 		if err != nil {
 			slog.Error("expire failed", "error", err)
 			os.Exit(1)
@@ -383,6 +416,100 @@ func loadCatalog(ctx context.Context, pool *pgxpool.Pool) ([]guide.Trim, error) 
 		out = append(out, *byID[id])
 	}
 	return out, nil
+}
+
+func parseExpireBefore(raw string) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("want RFC3339: %w", err)
+	}
+	return t, nil
+}
+
+func expireListings(ctx context.Context, repo *postgres.ListingRepository, days int, before time.Time, source string) (int64, error) {
+	if !before.IsZero() {
+		return repo.ExpireUnseen(ctx, before, source)
+	}
+	if days <= 0 {
+		return 0, nil
+	}
+	if source != "" {
+		return repo.ExpireUnseen(ctx, time.Now().Add(-time.Duration(days)*24*time.Hour), source)
+	}
+	return repo.ExpireStale(ctx, days)
+}
+
+func runExpire(dryRun bool, days int, before time.Time, source string) error {
+	if dryRun {
+		slog.Info("dry-run expire", "days", days, "before", before, "source", source)
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	n, err := expireListings(ctx, postgres.NewListingRepository(pool, false), days, before, source)
+	if err != nil {
+		return err
+	}
+	slog.Info("expire finished", "expired", n, "days", days, "before", before, "source", source)
+	return nil
+}
+
+var volumeBrands = []string{
+	"Toyota", "Renault", "Fiat", "Ford", "Peugeot", "Chevrolet", "Volkswagen",
+	"BMW", "Mercedes-Benz", "Audi", "Citroën", "Hyundai", "Nissan", "Chery",
+	"Kia", "Suzuki", "Honda", "Jeep", "RAM",
+}
+
+func runListThin() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := openPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	rows, err := pool.Query(ctx, `
+		WITH used AS (
+			SELECT b.name AS brand, m.name AS model, vl.trim_id, vl.year, vl.currency, COUNT(*) AS n
+			FROM vehicle_listings vl
+			JOIN trims t ON t.id = vl.trim_id
+			JOIN generations g ON g.id = t.generation_id
+			JOIN models m ON m.id = g.model_id
+			JOIN brands b ON b.id = m.brand_id
+			WHERE vl.source = 'mercadolibre'
+			  AND vl.active
+			  AND (vl.km IS NULL OR vl.km > 0)
+			  AND b.name = ANY($1)
+			GROUP BY 1, 2, 3, 4, 5
+		)
+		SELECT brand, model
+		FROM used
+		GROUP BY 1, 2
+		HAVING MAX(n) < 5
+		ORDER BY brand, model`, volumeBrands)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var brand, model string
+		if err := rows.Scan(&brand, &model); err != nil {
+			return err
+		}
+		fmt.Printf("%s\t%s\t%s\n", brand, model, mercadolibre.SearchPath(brand, model))
+	}
+	return rows.Err()
 }
 
 func runML(path, brand string, dryRun bool) error {

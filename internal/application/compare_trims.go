@@ -24,6 +24,8 @@ type CompareSpecs struct {
 type CompareMarket struct {
 	Count    int    `json:"count"`
 	Median   *int64 `json:"median"`
+	P25      *int64 `json:"p25"`
+	P75      *int64 `json:"p75"`
 	Currency string `json:"currency"`
 }
 
@@ -91,6 +93,8 @@ func (u *CompareTrims) Execute(ctx context.Context, trimIDs []int, year int, cur
 			Market: CompareMarket{
 				Count:    summary.Count,
 				Median:   summary.Median,
+				P25:      summary.P25,
+				P75:      summary.P75,
 				Currency: summary.Currency,
 			},
 		})
